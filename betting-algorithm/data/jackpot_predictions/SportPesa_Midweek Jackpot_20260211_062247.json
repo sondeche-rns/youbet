@@ -1,0 +1,22 @@
+{
+  "jackpot_id": "SportPesa_Midweek Jackpot_20260211_062247",
+  "provider": "SportPesa",
+  "type": "Midweek Jackpot",
+  "prize_amount": null,
+  "total_matches": 0,
+  "analyzed_at": "2026-02-11T06:22:47.548402",
+  "predictions": [],
+  "high_confidence_count": 0,
+  "low_confidence_count": 0,
+  "high_confidence_picks": [],
+  "low_confidence_picks": [],
+  "average_confidence": 0,
+  "recommended_combinations": [
+    {
+      "strategy": "Main Prediction",
+      "description": "All matches with highest probability outcome",
+      "picks": [],
+      "predicted_accuracy": 0
+    }
+  ]
+}

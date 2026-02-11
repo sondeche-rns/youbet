@@ -1,0 +1,281 @@
+{
+  "sources": [
+    {
+      "id": "football-data-uk",
+      "name": "Football-Data.co.uk",
+      "enabled": true,
+      "type": "csv",
+      "description": "Free historical football data with odds",
+      "base_url": "https://www.football-data.co.uk/mmz4281",
+      "url_pattern": "{base_url}/{season}/{league}.csv",
+      "rate_limit_seconds": 0.5,
+      "timeout_seconds": 30,
+      "sports": ["football"],
+      "leagues": [
+        {
+          "code": "E0",
+          "name": "Premier League",
+          "country": "England",
+          "tier": 1
+        },
+        {
+          "code": "E1",
+          "name": "Championship",
+          "country": "England",
+          "tier": 2
+        },
+        {
+          "code": "E2",
+          "name": "League One",
+          "country": "England",
+          "tier": 3
+        },
+        {
+          "code": "E3",
+          "name": "League Two",
+          "country": "England",
+          "tier": 4
+        },
+        {
+          "code": "SC0",
+          "name": "Scottish Premiership",
+          "country": "Scotland",
+          "tier": 1
+        },
+        {
+          "code": "SC1",
+          "name": "Scottish Championship",
+          "country": "Scotland",
+          "tier": 2
+        },
+        {
+          "code": "D1",
+          "name": "Bundesliga",
+          "country": "Germany",
+          "tier": 1
+        },
+        {
+          "code": "D2",
+          "name": "2. Bundesliga",
+          "country": "Germany",
+          "tier": 2
+        },
+        {
+          "code": "SP1",
+          "name": "La Liga",
+          "country": "Spain",
+          "tier": 1
+        },
+        {
+          "code": "SP2",
+          "name": "Segunda División",
+          "country": "Spain",
+          "tier": 2
+        },
+        {
+          "code": "I1",
+          "name": "Serie A",
+          "country": "Italy",
+          "tier": 1
+        },
+        {
+          "code": "I2",
+          "name": "Serie B",
+          "country": "Italy",
+          "tier": 2
+        },
+        {
+          "code": "F1",
+          "name": "Ligue 1",
+          "country": "France",
+          "tier": 1
+        },
+        {
+          "code": "F2",
+          "name": "Ligue 2",
+          "country": "France",
+          "tier": 2
+        },
+        {
+          "code": "N1",
+          "name": "Eredivisie",
+          "country": "Netherlands",
+          "tier": 1
+        },
+        {
+          "code": "B1",
+          "name": "Jupiler Pro League",
+          "country": "Belgium",
+          "tier": 1
+        },
+        {
+          "code": "P1",
+          "name": "Primeira Liga",
+          "country": "Portugal",
+          "tier": 1
+        },
+        {
+          "code": "T1",
+          "name": "Süper Lig",
+          "country": "Turkey",
+          "tier": 1
+        },
+        {
+          "code": "G1",
+          "name": "Super League",
+          "country": "Greece",
+          "tier": 1
+        }
+      ],
+      "seasons": [
+        {
+          "code": "2425",
+          "label": "2024-25",
+          "start_year": 2024,
+          "end_year": 2025
+        },
+        {
+          "code": "2324",
+          "label": "2023-24",
+          "start_year": 2023,
+          "end_year": 2024
+        },
+        {
+          "code": "2223",
+          "label": "2022-23",
+          "start_year": 2022,
+          "end_year": 2023
+        },
+        {
+          "code": "2122",
+          "label": "2021-22",
+          "start_year": 2021,
+          "end_year": 2022
+        },
+        {
+          "code": "2021",
+          "label": "2020-21",
+          "start_year": 2020,
+          "end_year": 2021
+        },
+        {
+          "code": "1920",
+          "label": "2019-20",
+          "start_year": 2019,
+          "end_year": 2020
+        },
+        {
+          "code": "1819",
+          "label": "2018-19",
+          "start_year": 2018,
+          "end_year": 2019
+        },
+        {
+          "code": "1718",
+          "label": "2017-18",
+          "start_year": 2017,
+          "end_year": 2018
+        }
+      ],
+      "column_mapping": {
+        "HomeTeam": "home_team",
+        "AwayTeam": "away_team",
+        "FTHG": "home_goals",
+        "FTAG": "away_goals",
+        "FTR": "result",
+        "B365H": "home_odds",
+        "B365D": "draw_odds",
+        "B365A": "away_odds",
+        "Date": "Date"
+      }
+    },
+    {
+      "id": "fbref",
+      "name": "FBref (Future)",
+      "enabled": false,
+      "type": "scraper",
+      "description": "Advanced football statistics (requires web scraping)",
+      "base_url": "https://fbref.com",
+      "sports": ["football"],
+      "features": [
+        "xG (Expected Goals)",
+        "Shot quality metrics",
+        "Possession statistics",
+        "Passing networks"
+      ],
+      "note": "Requires careful rate limiting and compliance with ToS"
+    },
+    {
+      "id": "api-football",
+      "name": "API-Football",
+      "enabled": false,
+      "type": "api",
+      "description": "Comprehensive football API (requires paid subscription)",
+      "base_url": "https://v3.football.api-sports.io",
+      "requires_api_key": true,
+      "api_key_env": "API_FOOTBALL_KEY",
+      "rate_limit": {
+        "free_tier": "100 requests/day",
+        "paid_tier": "Varies by plan"
+      },
+      "sports": ["football"],
+      "endpoints": {
+        "fixtures": "/fixtures",
+        "odds": "/odds",
+        "statistics": "/fixtures/statistics",
+        "lineups": "/fixtures/lineups"
+      }
+    },
+    {
+      "id": "the-odds-api",
+      "name": "The Odds API",
+      "enabled": true,
+      "type": "api",
+      "description": "Live and historical betting odds",
+      "base_url": "https://api.the-odds-api.com",
+      "requires_api_key": true,
+      "api_key_env": "ODDS_API_KEY",
+      "rate_limit": {
+        "free_tier": "500 requests/month",
+        "paid_tier": "Custom plans available"
+      },
+      "sports": ["football", "basketball", "tennis", "baseball"],
+      "endpoints": {
+        "sports": "/v4/sports",
+        "odds": "/v4/sports/{sport}/odds",
+        "scores": "/v4/sports/{sport}/scores"
+      }
+    },
+    {
+      "id": "custom-csv",
+      "name": "Custom CSV Import",
+      "enabled": true,
+      "type": "file",
+      "description": "Import your own CSV data files",
+      "directory": "./data/custom",
+      "required_columns": [
+        "Date",
+        "home_team",
+        "away_team",
+        "home_goals",
+        "away_goals"
+      ],
+      "optional_columns": [
+        "home_odds",
+        "draw_odds",
+        "away_odds",
+        "competition",
+        "season"
+      ]
+    }
+  ],
+  "default_config": {
+    "default_sport": "football",
+    "default_leagues": ["E0"],
+    "default_seasons": ["2324", "2223", "2122"],
+    "enable_caching": true,
+    "cache_directory": "./data/cache",
+    "retry_attempts": 3,
+    "retry_delay_seconds": 2
+  }
+}
