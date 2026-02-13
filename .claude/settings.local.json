@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wsl bash:*)",
+      "Bash(dir:*)",
+      "Bash(wsl -e bash -c \"cd /home/prototypus/git/bet4me/betting-algorithm && python3 validate_v2.py 2>&1 | head -100\":*)"
+    ]
+  }
+}

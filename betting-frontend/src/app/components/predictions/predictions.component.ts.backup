@@ -1,0 +1,187 @@
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ApiService } from '../../services/api.service';
+import { Prediction } from '../../models/betting.models';
+
+@Component({
+  selector: 'app-predictions',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
+    <div class="page-header">
+      <h1 class="page-title">Match Predictions</h1>
+      <p class="page-subtitle">Get AI-powered predictions for any match</p>
+    </div>
+
+    <div class="grid-2 gap-3">
+      <!-- Prediction Form -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">New Prediction</h3>
+        </div>
+        <form (ngSubmit)="getPrediction()">
+          <div class="form-group">
+            <label class="form-label">Home Team</label>
+            <input type="text" class="form-input" [(ngModel)]="homeTeam" name="homeTeam" placeholder="e.g., Arsenal" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Away Team</label>
+            <input type="text" class="form-input" [(ngModel)]="awayTeam" name="awayTeam" placeholder="e.g., Chelsea" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Competition</label>
+            <select class="form-select" [(ngModel)]="competition" name="competition">
+              <option value="Premier League">Premier League</option>
+              <option value="La Liga">La Liga</option>
+              <option value="Serie A">Serie A</option>
+              <option value="Bundesliga">Bundesliga</option>
+              <option value="Ligue 1">Ligue 1</option>
+              <option value="Champions League">Champions League</option>
+            </select>
+          </div>
+          <div class="odds-grid">
+            <div class="form-group">
+              <label class="form-label">Home Odds</label>
+              <input type="number" step="0.01" class="form-input" [(ngModel)]="homeOdds" name="homeOdds" placeholder="2.10">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Draw Odds</label>
+              <input type="number" step="0.01" class="form-input" [(ngModel)]="drawOdds" name="drawOdds" placeholder="3.40">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Away Odds</label>
+              <input type="number" step="0.01" class="form-input" [(ngModel)]="awayOdds" name="awayOdds" placeholder="3.60">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg" [disabled]="loading" style="width: 100%;">
+            {{ loading ? 'Analyzing...' : 'Get Prediction' }}
+          </button>
+        </form>
+      </div>
+
+      <!-- Prediction Result -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Prediction Result</h3>
+        </div>
+        @if (!prediction) {
+          <div class="empty-state">
+            <div class="empty-icon">🎯</div>
+            <p class="empty-description">Enter match details to get a prediction</p>
+          </div>
+        } @else {
+          <div class="prediction-result">
+            <div class="recommendation-box" [ngClass]="getRecommendationClass()">
+              <div class="rec-label">Recommendation</div>
+              <div class="rec-value">{{ prediction.recommendation }}</div>
+              <div class="rec-outcome">{{ prediction.outcome }}</div>
+            </div>
+
+            <div class="prob-section">
+              <h4>Win Probabilities</h4>
+              <div class="prob-item">
+                <span>Home Win</span>
+                <div class="prob-bar-container">
+                  <div class="prob-bar" [style.width.%]="prediction.homeProb * 100"></div>
+                </div>
+                <span class="prob-value">{{ prediction.homeProb * 100 | number:'1.1-1' }}%</span>
+              </div>
+              <div class="prob-item">
+                <span>Draw</span>
+                <div class="prob-bar-container">
+                  <div class="prob-bar draw" [style.width.%]="prediction.drawProb * 100"></div>
+                </div>
+                <span class="prob-value">{{ prediction.drawProb * 100 | number:'1.1-1' }}%</span>
+              </div>
+              <div class="prob-item">
+                <span>Away Win</span>
+                <div class="prob-bar-container">
+                  <div class="prob-bar away" [style.width.%]="prediction.awayProb * 100"></div>
+                </div>
+                <span class="prob-value">{{ prediction.awayProb * 100 | number:'1.1-1' }}%</span>
+              </div>
+            </div>
+
+            <div class="metrics-grid">
+              <div class="metric">
+                <div class="metric-value">{{ prediction.confidence * 100 | number:'1.0-0' }}%</div>
+                <div class="metric-label">Confidence</div>
+              </div>
+              <div class="metric">
+                <div class="metric-value" [class.text-success]="prediction.expectedValue > 0">
+                  {{ prediction.expectedValue | number:'1.1-1' }}%
+                </div>
+                <div class="metric-label">Expected Value</div>
+              </div>
+              <div class="metric">
+                <div class="metric-value">{{ prediction.stakePercentage || 0 | number:'1.2-2' }}%</div>
+                <div class="metric-label">Suggested Stake</div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  `,
+  styles: [`
+    .odds-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .recommendation-box {
+      text-align: center; padding: 1.5rem; border-radius: var(--radius); margin-bottom: 1.5rem;
+      &.strong { background: rgba(16, 185, 129, 0.15); border: 1px solid var(--success); }
+      &.value { background: rgba(99, 102, 241, 0.15); border: 1px solid var(--primary); }
+      &.none { background: rgba(245, 158, 11, 0.15); border: 1px solid var(--warning); }
+      .rec-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+      .rec-value { font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0; }
+      .rec-outcome { font-size: 0.875rem; color: var(--text-muted); }
+    }
+    .prob-section { margin-bottom: 1.5rem;
+      h4 { font-size: 0.875rem; margin-bottom: 1rem; color: var(--text-muted); }
+      .prob-item { display: grid; grid-template-columns: 80px 1fr 50px; align-items: center; gap: 1rem; margin-bottom: 0.75rem; font-size: 0.875rem; }
+      .prob-bar-container { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+      .prob-bar { height: 100%; background: var(--success); border-radius: 4px;
+        &.draw { background: var(--warning); }
+        &.away { background: var(--danger); }
+      }
+      .prob-value { text-align: right; font-weight: 500; }
+    }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;
+      .metric { padding: 1rem; background: var(--bg); border-radius: var(--radius-sm); }
+      .metric-value { font-size: 1.25rem; font-weight: 700; }
+      .metric-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+    }
+  `]
+})
+export class PredictionsComponent {
+  homeTeam = '';
+  awayTeam = '';
+  competition = 'Premier League';
+  homeOdds: number | null = null;
+  drawOdds: number | null = null;
+  awayOdds: number | null = null;
+  loading = false;
+  prediction: Prediction | null = null;
+
+  constructor(private api: ApiService) {}
+
+  getPrediction() {
+    if (!this.homeTeam || !this.awayTeam) return;
+    this.loading = true;
+    this.api.predictMatch(this.homeTeam, this.awayTeam, {
+      homeOdds: this.homeOdds || undefined,
+      drawOdds: this.drawOdds || undefined,
+      awayOdds: this.awayOdds || undefined,
+      competition: this.competition
+    }).subscribe({
+      next: pred => { this.prediction = pred; this.loading = false; },
+      error: () => this.loading = false
+    });
+  }
+
+  getRecommendationClass(): string {
+    if (!this.prediction?.recommendation) return 'none';
+    if (this.prediction.recommendation.includes('Strong')) return 'strong';
+    if (this.prediction.recommendation.includes('Value')) return 'value';
+    return 'none';
+  }
+}
