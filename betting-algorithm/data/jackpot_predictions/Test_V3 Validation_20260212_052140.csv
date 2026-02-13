@@ -1,0 +1,6 @@
+match_number,home_team,away_team,prediction,confidence,home_prob,draw_prob,away_prob,recommendation
+1,Sunderland,Liverpool,Away,0.6546,0.2982,0.2838,0.4181,No Bet
+2,Aston Villa,Brighton,Home,0.7084,0.5216,0.2497,0.2287,No Bet
+3,Crystal Palace,Burnley,Home,0.6882,0.4889,0.2927,0.2184,No Bet
+4,Nottingham,Wolverhampton,Home,0.7107,0.4661,0.3343,0.1996,No Bet
+5,Manchester City,Fulham,Home,0.7528,0.6108,0.2085,0.1807,Lean

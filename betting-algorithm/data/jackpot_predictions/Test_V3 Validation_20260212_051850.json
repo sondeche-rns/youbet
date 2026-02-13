@@ -1,0 +1,113 @@
+{
+  "jackpot_id": "Test_V3 Validation_20260212_051850",
+  "provider": "Test",
+  "type": "V3 Validation",
+  "prize_amount": null,
+  "total_matches": 5,
+  "analyzed_at": "2026-02-12T05:18:50.471116",
+  "predictions": [
+    {
+      "match_number": 1,
+      "home_team": "Sunderland",
+      "away_team": "Liverpool",
+      "prediction": "Away",
+      "confidence": 0.6546,
+      "home_prob": 0.2982,
+      "draw_prob": 0.2838,
+      "away_prob": 0.4181,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 2,
+      "home_team": "Aston Villa",
+      "away_team": "Brighton",
+      "prediction": "Home",
+      "confidence": 0.7084,
+      "home_prob": 0.5216,
+      "draw_prob": 0.2497,
+      "away_prob": 0.2287,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 3,
+      "home_team": "Crystal Palace",
+      "away_team": "Burnley",
+      "prediction": "Home",
+      "confidence": 0.6882,
+      "home_prob": 0.4889,
+      "draw_prob": 0.2927,
+      "away_prob": 0.2184,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 4,
+      "home_team": "Nottingham",
+      "away_team": "Wolverhampton",
+      "prediction": "Home",
+      "confidence": 0.7107,
+      "home_prob": 0.4661,
+      "draw_prob": 0.3343,
+      "away_prob": 0.1996,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 5,
+      "home_team": "Manchester City",
+      "away_team": "Fulham",
+      "prediction": "Home",
+      "confidence": 0.7528,
+      "home_prob": 0.6108,
+      "draw_prob": 0.2085,
+      "away_prob": 0.1807,
+      "recommendation": "Lean"
+    }
+  ],
+  "high_confidence_count": 1,
+  "low_confidence_count": 0,
+  "high_confidence_picks": [
+    {
+      "match_number": 5,
+      "home_team": "Manchester City",
+      "away_team": "Fulham",
+      "prediction": "Home",
+      "confidence": 0.7528,
+      "home_prob": 0.6108,
+      "draw_prob": 0.2085,
+      "away_prob": 0.1807,
+      "recommendation": "Lean"
+    }
+  ],
+  "low_confidence_picks": [],
+  "average_confidence": 0.7029400000000001,
+  "recommended_combinations": [
+    {
+      "strategy": "Main Prediction",
+      "description": "All matches with highest probability outcome",
+      "picks": [
+        "1: Away",
+        "2: Home",
+        "3: Home",
+        "4: Home",
+        "5: Home"
+      ],
+      "predicted_accuracy": 0.5010999999999999
+    },
+    {
+      "strategy": "Conservative",
+      "description": "3 high confidence picks, others doubled",
+      "high_confidence_picks": [
+        "2: Home",
+        "4: Home",
+        "5: Home"
+      ],
+      "predicted_accuracy": 0.5328333333333334
+    },
+    {
+      "strategy": "Draw Value",
+      "description": "1 matches with draw probability >30%",
+      "draw_candidates": [
+        "4: Nottingham vs Wolverhampton (33.4%)"
+      ]
+    }
+  ]
+}

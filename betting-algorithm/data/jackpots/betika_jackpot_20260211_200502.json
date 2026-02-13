@@ -1,0 +1,115 @@
+{
+  "provider": "Betika",
+  "type": "Jackpot",
+  "fetched_at": "2026-02-11T20:05:02.407545",
+  "url": "https://www.betika.com/en-ke/jackpot",
+  "matches": [
+    {
+      "match_number": 1,
+      "home_team": "Arsenal",
+      "away_team": "Liverpool",
+      "competition": "Premier League",
+      "kickoff": "Sat 15:00"
+    },
+    {
+      "match_number": 2,
+      "home_team": "Man City",
+      "away_team": "Chelsea",
+      "competition": "Premier League",
+      "kickoff": "Sat 17:30"
+    },
+    {
+      "match_number": 3,
+      "home_team": "Real Madrid",
+      "away_team": "Atletico Madrid",
+      "competition": "La Liga",
+      "kickoff": "Sat 20:00"
+    },
+    {
+      "match_number": 4,
+      "home_team": "Barcelona",
+      "away_team": "Sevilla",
+      "competition": "La Liga",
+      "kickoff": "Sat 18:30"
+    },
+    {
+      "match_number": 5,
+      "home_team": "Bayern Munich",
+      "away_team": "RB Leipzig",
+      "competition": "Bundesliga",
+      "kickoff": "Sat 17:30"
+    },
+    {
+      "match_number": 6,
+      "home_team": "Inter Milan",
+      "away_team": "Juventus",
+      "competition": "Serie A",
+      "kickoff": "Sat 19:45"
+    },
+    {
+      "match_number": 7,
+      "home_team": "PSG",
+      "away_team": "Lyon",
+      "competition": "Ligue 1",
+      "kickoff": "Sat 20:00"
+    },
+    {
+      "match_number": 8,
+      "home_team": "Tottenham",
+      "away_team": "Newcastle",
+      "competition": "Premier League",
+      "kickoff": "Sat 15:00"
+    },
+    {
+      "match_number": 9,
+      "home_team": "Man United",
+      "away_team": "West Ham",
+      "competition": "Premier League",
+      "kickoff": "Sat 17:00"
+    },
+    {
+      "match_number": 10,
+      "home_team": "Napoli",
+      "away_team": "Roma",
+      "competition": "Serie A",
+      "kickoff": "Sat 17:00"
+    },
+    {
+      "match_number": 11,
+      "home_team": "Dortmund",
+      "away_team": "Leverkusen",
+      "competition": "Bundesliga",
+      "kickoff": "Sat 15:30"
+    },
+    {
+      "match_number": 12,
+      "home_team": "Ajax",
+      "away_team": "PSV",
+      "competition": "Eredivisie",
+      "kickoff": "Sat 19:45"
+    },
+    {
+      "match_number": 13,
+      "home_team": "Benfica",
+      "away_team": "Porto",
+      "competition": "Primeira Liga",
+      "kickoff": "Sat 20:30"
+    },
+    {
+      "match_number": 14,
+      "home_team": "Celtic",
+      "away_team": "Rangers",
+      "competition": "Scottish Premiership",
+      "kickoff": "Sat 15:00"
+    },
+    {
+      "match_number": 15,
+      "home_team": "Sporting CP",
+      "away_team": "Braga",
+      "competition": "Primeira Liga",
+      "kickoff": "Sat 18:00"
+    }
+  ],
+  "prize_amount": null,
+  "matches_count": 15
+}

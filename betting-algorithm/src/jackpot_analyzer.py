@@ -30,6 +30,62 @@ class JackpotAnalyzer:
         self.results_dir = Path('./data/jackpot_results')
         self.results_dir.mkdir(parents=True, exist_ok=True)
 
+    def _enrich_match_data(self, match: Dict) -> Dict:
+        """
+        Enrich raw jackpot match data with team stats from database.
+
+        Looks up Elo ratings, league positions, form, xG averages, and style
+        for both teams. Falls back to neutral defaults when team not found.
+        """
+        from .config import lookup_team
+
+        home_name = match.get('home_team', '')
+        away_name = match.get('away_team', '')
+
+        home_data = lookup_team(home_name)
+        away_data = lookup_team(away_name)
+
+        match_data = {
+            'homeTeam': home_name,
+            'awayTeam': away_name,
+            'competition': match.get('competition', 'Unknown'),
+            'date': match.get('kickoff'),
+        }
+
+        # Enrich home team data
+        if home_data:
+            match_data.update({
+                'home_elo': home_data['elo'],
+                'home_position': home_data['position'],
+                'homePosition': home_data['position'],
+                'home_form': home_data['form'],
+                'homeStarRating': home_data['stars'],
+                'home_xg': home_data['home_xg_avg'],
+                'homeStyle': home_data['style'],
+            })
+
+        # Enrich away team data
+        if away_data:
+            match_data.update({
+                'away_elo': away_data['elo'],
+                'away_position': away_data['position'],
+                'awayPosition': away_data['position'],
+                'away_form': away_data['form'],
+                'awayStarRating': away_data['stars'],
+                'away_xg': away_data['away_xg_avg'],
+                'awayStyle': away_data['style'],
+            })
+
+        # Pass through odds if available from jackpot source
+        if 'home_odds' in match:
+            match_data['homeOdds'] = match['home_odds']
+        if 'draw_odds' in match:
+            match_data['drawOdds'] = match['draw_odds']
+        if 'away_odds' in match:
+            match_data['awayOdds'] = match['away_odds']
+
+        return match_data
+
     def analyze_jackpot(self, jackpot_data: Dict) -> Dict:
         """
         Analyze a jackpot and generate predictions for all matches
@@ -49,12 +105,8 @@ class JackpotAnalyzer:
         low_confidence_picks = []
 
         for match in jackpot_data['matches']:
-            match_data = {
-                'homeTeam': match['home_team'],
-                'awayTeam': match['away_team'],
-                'competition': match.get('competition', 'Unknown'),
-                'date': match.get('kickoff')
-            }
+            # Enrich match data with team stats from database
+            match_data = self._enrich_match_data(match)
 
             # Generate prediction
             try:
@@ -150,7 +202,10 @@ class JackpotAnalyzer:
         print(f"Low Confidence Picks (<55%): {analysis['low_confidence_count']}")
         print(f"\n💡 Recommended Combinations:")
         for i, combo in enumerate(analysis['recommended_combinations'][:3], 1):
-            print(f"  {i}. {combo['description']}: {combo['predicted_accuracy']*100:.1f}% accuracy")
+            if 'predicted_accuracy' in combo:
+                print(f"  {i}. {combo['description']}: {combo['predicted_accuracy']*100:.1f}% accuracy")
+            else:
+                print(f"  {i}. {combo['description']}")
         print()
 
     def _generate_combinations(self, predictions: List[Dict]) -> List[Dict]:

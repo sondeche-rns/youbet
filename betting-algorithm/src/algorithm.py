@@ -24,12 +24,66 @@ class ProfessionalBettingAlgorithm:
     - Multi-sport support (football, basketball, tennis)
     """
 
-    def __init__(self, sport: str = 'football'):
+    def __init__(self, sport: str = 'football', use_v2_weights: bool = True, enable_calibration: bool = True):
         self.sport = sport
         self.config = self._load_config(sport)
+
+        # NEW: Add V2 weights support
+        if use_v2_weights:
+            from .config import FOOTBALL_WEIGHTS_V2
+            self.config['weights'] = FOOTBALL_WEIGHTS_V2
+
         self.elo_ratings = {}
         self.team_form = {}
         self.calibration_params = {'a': 1.0, 'b': 0.0}  # Platt scaling params
+
+        # NEW: Add historical data storage for context building
+        self.historical_data = None  # Set via set_historical_data()
+
+        # NEW: Add calibration engine for self-improving weights
+        self.calibration_engine = None
+        if enable_calibration:
+            from .calibration import CalibrationEngine
+            self.calibration_engine = CalibrationEngine(learning_rate=0.01, max_history=1000)
+
+    def set_historical_data(self, data):
+        """Set historical data for context building (H2H, season stats)"""
+        self.historical_data = data
+
+    def record_actual_result(self, match_id: str, actual_outcome: str, predicted_outcome: str,
+                            predicted_probs: Dict[str, float], factors: Dict):
+        """
+        Record actual match result for calibration.
+
+        Args:
+            match_id: Unique match identifier
+            actual_outcome: Actual result ('home', 'draw', 'away')
+            predicted_outcome: Predicted result
+            predicted_probs: Predicted probabilities
+            factors: Factor data from prediction
+        """
+        if self.calibration_engine:
+            self.calibration_engine.record_prediction(
+                match_id=match_id,
+                factors=factors,
+                predicted_probs=predicted_probs,
+                predicted_outcome=predicted_outcome,
+                actual_outcome=actual_outcome
+            )
+
+    def apply_calibration(self):
+        """Apply calibration adjustments to weights based on performance"""
+        if self.calibration_engine:
+            adjusted_weights = self.calibration_engine.calibrate_weights(self.config['weights'])
+            self.config['weights'] = adjusted_weights
+            return adjusted_weights
+        return self.config['weights']
+
+    def get_calibration_report(self) -> Dict:
+        """Get performance report from calibration engine"""
+        if self.calibration_engine:
+            return self.calibration_engine.get_performance_report()
+        return {'error': 'Calibration not enabled'}
 
     def _load_config(self, sport: str) -> Dict:
         """Load sport-specific configuration"""
@@ -101,15 +155,19 @@ class ProfessionalBettingAlgorithm:
         # Calculate raw probabilities using weighted factors
         raw_probs = self._calculate_weighted_probabilities(factors)
 
-        # If we have market odds, incorporate them as they contain valuable information
+        # If we have market odds, incorporate them (weight depends on data quality)
         if match_data.get('homeOdds') and match_data.get('drawOdds') and match_data.get('awayOdds'):
             market_probs = self._odds_to_probabilities(
                 match_data['homeOdds'],
                 match_data['drawOdds'],
                 match_data['awayOdds']
             )
-            # Blend our model with market (70% our model, 30% market)
-            raw_probs = self._blend_probabilities(raw_probs, market_probs, 0.7)
+            # Determine data quality: how much real data do we have vs defaults?
+            data_quality = self._assess_data_quality(match_data)
+            # Low data quality → trust market more (up to 60% market weight)
+            # High data quality → trust model more (30% market weight)
+            model_weight = 0.40 + data_quality * 0.30  # range: 0.40 (poor data) to 0.70 (rich data)
+            raw_probs = self._blend_probabilities(raw_probs, market_probs, model_weight)
 
         # Apply Poisson model for football
         if self.sport == 'football':
@@ -144,14 +202,21 @@ class ProfessionalBettingAlgorithm:
             'recommendation': recommendation,
             'factors': factors,
             'expectedGoals': {
-                'home': round(factors.get('expectedGoals', {}).get('homeXg', 1.5), 2),
-                'away': round(factors.get('expectedGoals', {}).get('awayXg', 1.2), 2)
+                'home': round(factors.get('expectedGoals', {}).get('homeXg', 1.3), 2),
+                'away': round(factors.get('expectedGoals', {}).get('awayXg', 1.3), 2)
             },
             'timestamp': datetime.now().isoformat()
         }
 
     def _calculate_all_factors(self, match_data: Dict) -> Dict:
-        """Calculate all 12 prediction factors"""
+        """Calculate all prediction factors (original 10 + new 6 contextual)"""
+        from .context_builder import MatchContextBuilder
+        from .models import FactorResult
+
+        # Build match context for new factors
+        context_builder = MatchContextBuilder(self.historical_data if hasattr(self, 'historical_data') else None)
+        context = context_builder.build_context(match_data)
+
         factors = {}
 
         # 1. Expected Goals (xG) - 20%
@@ -184,12 +249,25 @@ class ProfessionalBettingAlgorithm:
         # 10. External Factors - 2%
         factors['externalFactors'] = self._calculate_external_factors(match_data)
 
+        # 11. Team Quality Gap (V3) - anchors prediction to fundamental quality
+        factors['teamQualityGap'] = self._calculate_team_quality_gap(match_data)
+
+        # Contextual factors (Version 2.0)
+        h2h_hist, h2h_anom = self._calculate_h2h_factors(match_data, context)
+        factors['h2hHistorical'] = h2h_hist
+        factors['h2hAnomaly'] = h2h_anom
+        factors['possessionQuality'] = self._calculate_possession_quality(match_data, context)
+        factors['managerMomentum'] = self._calculate_manager_momentum(match_data, context)
+        factors['relegationMotivation'] = self._calculate_relegation_motivation(match_data, context)
+        factors['counterAttackEfficiency'] = self._calculate_counter_attack_efficiency(match_data, context)
+        factors['awayDrawFrequency'] = self._calculate_away_draw_frequency(match_data, context)
+
         return factors
 
     def _calculate_expected_goals(self, match_data: Dict) -> Dict:
         """Calculate expected goals factor"""
-        home_xg = match_data.get('home_xg', match_data.get('homeXg', 1.5))
-        away_xg = match_data.get('away_xg', match_data.get('awayXg', 1.2))
+        home_xg = match_data.get('home_xg', match_data.get('homeXg', 1.3))
+        away_xg = match_data.get('away_xg', match_data.get('awayXg', 1.3))
 
         # Normalize xG difference to -1 to 1 range
         xg_diff = home_xg - away_xg
@@ -214,9 +292,9 @@ class ProfessionalBettingAlgorithm:
         away_poss = match_data.get('away_possession', 50)
 
         # Shot accuracy
-        home_shots = match_data.get('home_shots', 12)
-        home_sot = match_data.get('home_shots_on_target', 5)
-        away_shots = match_data.get('away_shots', 10)
+        home_shots = match_data.get('home_shots', 11)
+        home_sot = match_data.get('home_shots_on_target', 4)
+        away_shots = match_data.get('away_shots', 11)
         away_sot = match_data.get('away_shots_on_target', 4)
 
         home_accuracy = home_sot / max(home_shots, 1)
@@ -282,7 +360,7 @@ class ProfessionalBettingAlgorithm:
             ('attacking', 'attacking'): 0.50,
             ('defensive', 'attacking'): 0.55,
             ('defensive', 'defensive'): 0.50,
-            ('balanced', 'balanced'): 0.52,
+            ('balanced', 'balanced'): 0.50,
         }
 
         score = style_matchups.get((home_style, away_style), 0.52)
@@ -297,8 +375,8 @@ class ProfessionalBettingAlgorithm:
 
     def _calculate_current_form(self, match_data: Dict) -> Dict:
         """Calculate current form based on recent results"""
-        home_form = match_data.get('home_form', 'WWDLW')
-        away_form = match_data.get('away_form', 'WDLWD')
+        home_form = match_data.get('home_form', 'WDWLD')
+        away_form = match_data.get('away_form', 'WDWLD')
 
         def form_to_score(form_str: str) -> float:
             if not form_str:
@@ -419,7 +497,7 @@ class ProfessionalBettingAlgorithm:
         }
 
     def _calculate_home_advantage(self, match_data: Dict) -> Dict:
-        """Calculate home advantage"""
+        """Calculate home advantage, dampened when away team is significantly stronger."""
         venue = match_data.get('venue', 'Home Stadium')
         is_neutral = match_data.get('isNeutralVenue', False)
 
@@ -428,6 +506,16 @@ class ProfessionalBettingAlgorithm:
 
         if is_neutral:
             home_adv = 0.02  # Slight familiarity advantage
+
+        # Dampen home advantage when away team is much stronger
+        home_pos = match_data.get('home_position', match_data.get('homePosition', 10))
+        away_pos = match_data.get('away_position', match_data.get('awayPosition', 10))
+        quality_gap = home_pos - away_pos  # Positive = away team is better (lower position)
+        dampen_factor = 1.0
+        if quality_gap > 8:
+            # Significant quality gap: reduce home advantage by up to 70%
+            dampen_factor = max(0.30, 1.0 - (quality_gap - 8) * 0.07)
+            home_adv *= dampen_factor
 
         # Crowd factor (if available)
         expected_attendance_pct = match_data.get('expectedAttendancePct', 85)
@@ -438,7 +526,9 @@ class ProfessionalBettingAlgorithm:
         return {
             'venue': str(venue),
             'isNeutral': bool(is_neutral),
-            'baseAdvantage': float(home_adv),
+            'baseAdvantage': float(self.config.get('home_advantage', 0.10)),
+            'dampenedAdvantage': float(final_advantage),
+            'qualityGapDampening': float(dampen_factor),
             'crowdFactor': float(crowd_factor),
             'score': float(0.5 + final_advantage)
         }
@@ -473,41 +563,396 @@ class ProfessionalBettingAlgorithm:
             'score': float(0.5 + travel_impact + weather_impact)
         }
 
+    def _calculate_team_quality_gap(self, match_data: Dict) -> Dict:
+        """
+        Calculate fundamental team quality gap using Elo, position, and star ratings.
+
+        This factor anchors predictions to the actual quality difference between teams,
+        preventing the algorithm from picking massive underdogs (e.g. Sunderland over Liverpool).
+
+        Score: >0.5 favors home, <0.5 favors away.
+        Range: ~0.15 (massive away advantage) to ~0.85 (massive home advantage).
+        """
+        # Signal 1: Elo difference
+        home_elo = match_data.get('home_elo', self.elo_ratings.get(
+            match_data.get('homeTeam', match_data.get('home_team', '')), self.config['base_elo']))
+        away_elo = match_data.get('away_elo', self.elo_ratings.get(
+            match_data.get('awayTeam', match_data.get('away_team', '')), self.config['base_elo']))
+        elo_diff = home_elo - away_elo
+        elo_signal = 0.5 + np.tanh(elo_diff / 300) * 0.4
+
+        # Signal 2: League position difference
+        home_pos = match_data.get('home_position', match_data.get('homePosition', 10))
+        away_pos = match_data.get('away_position', match_data.get('awayPosition', 10))
+        pos_diff = away_pos - home_pos  # Positive = home team better positioned
+        position_signal = 0.5 + np.tanh(pos_diff / 10) * 0.35
+
+        # Signal 3: Star rating difference (squad quality proxy)
+        home_stars = match_data.get('homeStarRating', 3)
+        away_stars = match_data.get('awayStarRating', 3)
+        star_signal = 0.5 + (home_stars - away_stars) * 0.1
+        star_signal = max(0.2, min(0.8, star_signal))
+
+        # Weighted combination (Elo is most reliable if available)
+        has_elo = (match_data.get('home_elo') is not None or
+                   match_data.get('homeTeam', '') in self.elo_ratings)
+        if has_elo:
+            quality_score = elo_signal * 0.50 + position_signal * 0.35 + star_signal * 0.15
+        else:
+            quality_score = position_signal * 0.60 + star_signal * 0.40
+
+        gap_magnitude = abs(quality_score - 0.5) * 2
+
+        return {
+            'homeElo': float(home_elo),
+            'awayElo': float(away_elo),
+            'eloDiff': float(elo_diff),
+            'positionDiff': int(pos_diff),
+            'gapMagnitude': float(gap_magnitude),
+            'qualityFavorite': 'home' if quality_score > 0.55 else ('away' if quality_score < 0.45 else 'neutral'),
+            'score': float(quality_score)
+        }
+
+    # ========================================================================
+    # CONTEXTUAL FACTORS (Version 2.0 - Enhanced Draw Prediction)
+    # ========================================================================
+
+    def _calculate_h2h_factors(self, match_data: Dict, context) -> tuple:
+        """
+        Calculate H2H historical and anomaly factors.
+
+        Returns tuple: (historical_factor, anomaly_factor)
+        """
+        from .models import FactorResult
+
+        if context.h2hRecord is None:
+            return (
+                FactorResult(name='h2hHistorical', value=0.5, weight=0.0, triggered=False,
+                            confidence=0, explanation="No H2H data available"),
+                FactorResult(name='h2hAnomaly', value=0.5, weight=0.0, triggered=False,
+                            confidence=0, explanation="No H2H data for anomaly detection")
+            )
+
+        h2h = context.h2hRecord
+
+        # Calculate base H2H score
+        if h2h.total_matches == 0:
+            h2h_score = 0.5
+            confidence = 0
+        else:
+            home_win_rate = h2h.home_wins / h2h.total_matches
+            h2h_score = 0.5 + (home_win_rate - 0.33) * 0.5
+            confidence = min(h2h.total_matches * 10, 100)
+
+        # Check anomaly
+        weaker_team_is_home = context.homeLeaguePosition > context.awayLeaguePosition
+        anomaly_detected = h2h.anomalyTriggered and h2h.weakerTeamUnbeatenStreak >= 3
+
+        if anomaly_detected:
+            anomaly_boost = 0.2 if weaker_team_is_home else -0.1
+            return (
+                FactorResult(name='h2hHistorical', value=h2h_score, weight=0.0, triggered=False,
+                            confidence=confidence, explanation=f"Replaced by anomaly (streak: {h2h.weakerTeamUnbeatenStreak})"),
+                FactorResult(name='h2hAnomaly', value=0.5 + anomaly_boost, weight=0.15, triggered=True,
+                            confidence=90, explanation=f"Weaker team unbeaten in {h2h.weakerTeamUnbeatenStreak} H2H",
+                            metadata={'streak': h2h.weakerTeamUnbeatenStreak, 'weaker_team_home': weaker_team_is_home})
+            )
+        else:
+            return (
+                FactorResult(name='h2hHistorical', value=h2h_score, weight=0.05, triggered=True,
+                            confidence=confidence, explanation=f"H2H: {h2h.home_wins}W-{h2h.draws}D-{h2h.away_wins}L"),
+                FactorResult(name='h2hAnomaly', value=0.5, weight=0.0, triggered=False,
+                            confidence=50, explanation="No anomaly (streak < 3)")
+            )
+
+    def _calculate_possession_quality(self, match_data: Dict, context) -> object:
+        """Calculate possession quality index (xG efficiency per possession)."""
+        from .models import FactorResult
+        import numpy as np
+
+        home_xg = match_data.get('home_xg', match_data.get('homeXg', 1.3))
+        away_xg = match_data.get('away_xg', match_data.get('awayXg', 1.3))
+        home_poss = max(match_data.get('home_possession', 50) / 100, 0.3)
+        away_poss = max(match_data.get('away_possession', 50) / 100, 0.3)
+
+        home_pqi = (home_xg / home_poss) * 100
+        away_pqi = (away_xg / away_poss) * 100
+
+        pqi_diff = home_pqi - away_pqi
+        normalized_score = 0.5 + np.tanh(pqi_diff / 100) * 0.3
+
+        classify = lambda pqi: "excellent" if pqi > 300 else "good" if pqi > 200 else "poor"
+
+        return FactorResult(
+            name='possessionQuality', value=float(normalized_score), weight=0.12, triggered=True,
+            confidence=80, explanation=f"Home PQI: {home_pqi:.1f} ({classify(home_pqi)}), Away: {away_pqi:.1f} ({classify(away_pqi)})",
+            metadata={'home_pqi': float(home_pqi), 'away_pqi': float(away_pqi)}
+        )
+
+    def _calculate_manager_momentum(self, match_data: Dict, context) -> object:
+        """Calculate manager momentum (new manager bounce with decay)."""
+        from .models import FactorResult
+
+        if context.homeManagerInfo is None or context.awayManagerInfo is None:
+            return FactorResult(name='managerMomentum', value=0.5, weight=0.0, triggered=False,
+                               confidence=0, explanation="No manager data")
+
+        def calc_bounce(mgr):
+            base = 0.08 if not mgr.isInterim else 0.056
+            bounce = base * (0.85 ** mgr.gamesManaged)
+            return bounce if bounce >= 0.01 else 0.0
+
+        home_bounce = calc_bounce(context.homeManagerInfo)
+        away_bounce = calc_bounce(context.awayManagerInfo)
+        net_bounce = home_bounce - away_bounce
+
+        if abs(net_bounce) < 0.01:
+            return FactorResult(name='managerMomentum', value=0.5, weight=0.0, triggered=False,
+                               confidence=50, explanation="No active bounce")
+
+        value = 0.5 + net_bounce * 2
+        return FactorResult(
+            name='managerMomentum', value=float(value), weight=float(max(home_bounce, away_bounce)),
+            triggered=True, confidence=80,
+            explanation=f"Home: {home_bounce:.3f}, Away: {away_bounce:.3f}",
+            metadata={'home_bounce': float(home_bounce), 'away_bounce': float(away_bounce)}
+        )
+
+    def _calculate_relegation_motivation(self, match_data: Dict, context) -> object:
+        """Calculate relegation motivation factor."""
+        from .models import FactorResult
+
+        home_pos = context.homeLeaguePosition
+        recent_form = context.homeRecentForm[-4:] if len(context.homeRecentForm) >= 4 else context.homeRecentForm
+        recent_wins = sum(1 for r in recent_form if r == 'W')
+        showing_fight = recent_wins >= 2
+
+        if home_pos >= 18 and showing_fight:
+            draw_boost, home_win_boost, tier = 0.08, 0.03, "critical"
+        elif home_pos >= 17:
+            draw_boost, home_win_boost, tier = 0.04, 0.02, "danger"
+        else:
+            return FactorResult(name='relegationMotivation', value=0.5, weight=0.0, triggered=False,
+                               confidence=100, explanation=f"Not in relegation zone (pos {home_pos})")
+
+        return FactorResult(
+            name='relegationMotivation', value=float(0.5 + draw_boost + home_win_boost),
+            weight=0.08, triggered=True, confidence=90,
+            explanation=f"{tier} zone (pos {home_pos}), {recent_wins}/4 wins",
+            metadata={'draw_boost': float(draw_boost), 'home_win_boost': float(home_win_boost), 'tier': tier}
+        )
+
+    def _calculate_counter_attack_efficiency(self, match_data: Dict, context) -> object:
+        """Calculate counter-attack efficiency factor."""
+        from .models import FactorResult
+
+        # Use season stats if available, fall back to match-level possession
+        if context.homeSeasonStats is not None and context.awaySeasonStats is not None:
+            home_poss = context.homeSeasonStats.get('avgPossession', 50)
+            away_poss = context.awaySeasonStats.get('avgPossession', 50)
+            confidence_base = 75
+        elif 'home_possession' in match_data or 'away_possession' in match_data:
+            home_poss = match_data.get('home_possession', 50)
+            away_poss = match_data.get('away_possession', 50)
+            confidence_base = 60  # Lower confidence from single-match data
+        else:
+            return FactorResult(name='counterAttackEfficiency', value=0.5, weight=0.0, triggered=False,
+                               confidence=0, explanation="No possession data")
+
+        scenario = (home_poss < 45 and away_poss > 58) or (away_poss < 45 and home_poss > 58)
+
+        if not scenario:
+            return FactorResult(name='counterAttackEfficiency', value=0.5, weight=0.0, triggered=False,
+                               confidence=confidence_base, explanation=f"No counter setup (H:{home_poss:.1f}% A:{away_poss:.1f}%)")
+
+        if home_poss < 45:
+            underdog_team, underdog_poss = "home", home_poss
+            value = 0.5 + 0.05  # favor home underdog slightly
+        else:
+            underdog_team, underdog_poss = "away", away_poss
+            value = 0.5 - 0.05  # favor away underdog slightly
+
+        return FactorResult(
+            name='counterAttackEfficiency', value=float(value), weight=0.06, triggered=True,
+            confidence=confidence_base, explanation=f"{underdog_team} counter threat (poss: {underdog_poss:.1f}%)",
+            metadata={'underdog_team': underdog_team, 'draw_boost': 0.06, 'underdog_boost': 0.04}
+        )
+
+    def _calculate_away_draw_frequency(self, match_data: Dict, context) -> object:
+        """Calculate away draw frequency factor."""
+        from .models import FactorResult
+
+        # Use season stats if available, fall back to match-level data
+        if context.awaySeasonStats is not None:
+            away_draw_rate = context.awaySeasonStats.get('awayDrawRate', 0.25)
+            total_away_games = context.awaySeasonStats.get('totalAwayGames', 0)
+        elif 'away_draw_rate' in match_data:
+            away_draw_rate = match_data['away_draw_rate']
+            total_away_games = match_data.get('away_total_games', 10)
+        else:
+            return FactorResult(name='awayDrawFrequency', value=0.5, weight=0.0, triggered=False,
+                               confidence=0, explanation="No away stats")
+
+        if total_away_games < 5 or away_draw_rate <= 0.35:
+            return FactorResult(name='awayDrawFrequency', value=0.5, weight=0.0, triggered=False,
+                               confidence=20 if total_away_games < 5 else 80,
+                               explanation=f"Normal rate: {away_draw_rate*100:.1f}%" if total_away_games >= 5 else "Insufficient games")
+
+        boost = min((away_draw_rate - 0.25) * 0.5, 0.15)
+
+        return FactorResult(
+            name='awayDrawFrequency', value=float(0.5 + boost), weight=0.06, triggered=True,
+            confidence=min(total_away_games * 5, 100),
+            explanation=f"Draw-prone: {away_draw_rate*100:.1f}% (rate over {total_away_games} games)",
+            metadata={'draw_boost': float(boost), 'away_draw_rate': float(away_draw_rate)}
+        )
+
+    def _calculate_draw_probability(self, weighted_score: float, factors: Dict,
+                                      draw_boost_total: float = 0.0) -> float:
+        """
+        Calculate draw probability using multi-signal model.
+
+        Replaces the old formula: 0.25 * (1 - |ws - 0.5| * 2) which capped at 25%.
+        EPL average draw rate is ~26%, and evenly-matched defensive games can reach 35%.
+
+        Returns:
+            Draw probability in range [0.08, 0.40]
+        """
+        # Signal 1: Base league draw rate
+        base_draw = 0.26
+
+        # Signal 2: Quality gap (teams close in quality = higher draw probability)
+        quality_gap = abs(weighted_score - 0.5)  # 0 = perfectly even, 0.5 = total mismatch
+        # gap=0 → +0.06, gap=0.15 → +0.01, gap=0.3 → -0.04, gap=0.5 → -0.10
+        quality_gap_adjustment = 0.06 - quality_gap * 0.32
+
+        # Signal 3: Defensive profile from xG
+        home_xg = factors.get('expectedGoals', {})
+        if isinstance(home_xg, dict):
+            h_xg = home_xg.get('homeXg', 1.3)
+            a_xg = home_xg.get('awayXg', 1.3)
+        else:
+            h_xg, a_xg = 1.3, 1.3
+        total_xg = h_xg + a_xg
+        if total_xg < 2.0:
+            defensive_boost = 0.05
+        elif total_xg < 2.5:
+            defensive_boost = 0.02
+        else:
+            defensive_boost = 0.0
+
+        # Signal 4: xG closeness (similar xG = higher draw chance)
+        xg_diff = abs(h_xg - a_xg)
+        xg_closeness_adj = max(-0.04, 0.04 - xg_diff * 0.04)
+
+        # Signal 5: Contextual factor draw boosts (already accumulated)
+        contextual_boost = draw_boost_total
+
+        # Combine signals
+        draw_prob = (base_draw + quality_gap_adjustment + defensive_boost +
+                     xg_closeness_adj + contextual_boost)
+
+        # Clamp to realistic range
+        return max(0.08, min(0.40, draw_prob))
+
     def _calculate_weighted_probabilities(self, factors: Dict) -> Dict:
-        """Calculate probabilities from weighted factors"""
-        weights = self.config['weights']
+        """Calculate probabilities from weighted factors with dynamic weight normalization"""
+        from .models import FactorResult
 
-        # Calculate weighted home advantage score
+        # Separate FactorResult objects from legacy dict factors
+        active_factors = {}
+        draw_boost_total = 0.0
+        home_boost_total = 0.0
+        away_boost_total = 0.0
+
+        for factor_name, factor_data in factors.items():
+            # Handle FactorResult objects (new contextual factors)
+            if isinstance(factor_data, FactorResult):
+                if factor_data.triggered and factor_data.weight > 0:
+                    active_factors[factor_name] = {
+                        'score': factor_data.value,
+                        'weight': factor_data.weight,
+                        'metadata': factor_data.metadata or {}
+                    }
+                    # Extract draw/home/away boosts from metadata
+                    if 'draw_boost' in factor_data.metadata:
+                        draw_boost_total += factor_data.metadata['draw_boost']
+                    if 'home_win_boost' in factor_data.metadata:
+                        home_boost_total += factor_data.metadata['home_win_boost']
+            # Handle legacy dict factors (original 10 factors)
+            elif isinstance(factor_data, dict) and 'score' in factor_data:
+                config_weight = self.config['weights'].get(factor_name, 0.0)
+                if config_weight > 0:
+                    active_factors[factor_name] = {
+                        'score': factor_data['score'],
+                        'weight': config_weight,
+                        'metadata': {}
+                    }
+
+        # Calculate dynamic normalized weights
+        total_weight = sum(f['weight'] for f in active_factors.values())
+        if total_weight == 0:
+            # Fallback to neutral probabilities
+            return {'home': 0.33, 'draw': 0.34, 'away': 0.33}
+
+        # Calculate weighted score with normalized weights
         weighted_score = 0.0
-        total_weight = 0.0
+        for factor_name, factor in active_factors.items():
+            normalized_weight = factor['weight'] / total_weight
+            weighted_score += factor['score'] * normalized_weight
 
-        for factor_name, weight in weights.items():
-            if factor_name in factors and 'score' in factors[factor_name]:
-                weighted_score += factors[factor_name]['score'] * weight
-                total_weight += weight
+        # Convert to base probabilities using enhanced draw model
+        draw_prob = self._calculate_draw_probability(weighted_score, factors, draw_boost_total)
+        home_prob = weighted_score * (1 - draw_prob) + home_boost_total
+        away_prob = (1 - weighted_score) * (1 - draw_prob) - home_boost_total
 
-        if total_weight > 0:
-            weighted_score = weighted_score / total_weight
+        # Ensure probabilities stay within valid range
+        home_prob = max(0.05, min(0.90, home_prob))
+        draw_prob = max(0.05, min(0.90, draw_prob))
+        away_prob = max(0.05, min(0.90, away_prob))
 
-        # Convert to probabilities (simplified 3-way)
-        home_prob = weighted_score
-        draw_prob = self.config.get('draw_threshold', 0.25) * (1 - abs(weighted_score - 0.5) * 2)
-        away_prob = 1 - home_prob - draw_prob
-
-        # Normalize
+        # Final normalization to sum = 1.0
         total = home_prob + draw_prob + away_prob
 
         return {
-            'home': max(0.05, home_prob / total),
-            'draw': max(0.05, draw_prob / total),
-            'away': max(0.05, away_prob / total)
+            'home': home_prob / total,
+            'draw': draw_prob / total,
+            'away': away_prob / total
         }
+
+    def _assess_data_quality(self, match_data: Dict) -> float:
+        """
+        Assess how much real data we have vs defaults.
+
+        Returns:
+            Float 0.0 (no real data, only defaults) to 1.0 (rich data available)
+        """
+        # Key data fields that indicate real data was provided
+        data_fields = [
+            ('home_xg', 'homeXg'),
+            ('away_xg', 'awayXg'),
+            ('home_elo', 'away_elo'),
+            ('home_position', 'homePosition'),
+            ('away_position', 'awayPosition'),
+            ('home_form',),
+            ('away_form',),
+            ('home_possession', 'away_possession'),
+            ('homeStarRating', 'awayStarRating'),
+            ('homeStyle', 'awayStyle'),
+        ]
+        fields_present = 0
+        for field_group in data_fields:
+            for field in field_group:
+                if field in match_data:
+                    fields_present += 1
+                    break
+        return min(1.0, fields_present / len(data_fields))
 
     def _calculate_poisson_probabilities(self, match_data: Dict, factors: Dict) -> Dict:
         """Calculate probabilities using Poisson distribution"""
         # Get expected goals
-        home_xg = factors.get('expectedGoals', {}).get('homeXg', 1.5)
-        away_xg = factors.get('expectedGoals', {}).get('awayXg', 1.2)
+        home_xg = factors.get('expectedGoals', {}).get('homeXg', 1.3)
+        away_xg = factors.get('expectedGoals', {}).get('awayXg', 1.3)
 
         # Adjust based on team strength
         strength_factor = factors.get('teamStrength', {}).get('score', 0.5)
