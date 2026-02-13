@@ -1,0 +1,122 @@
+{
+  "Arsenal": {
+    "manager": "Mikel Arteta",
+    "appointmentDate": "2019-12-20",
+    "isInterim": false,
+    "results": ["W", "W", "D", "W", "L", "W", "D", "W", "W", "D"]
+  },
+  "Liverpool": {
+    "manager": "Jurgen Klopp",
+    "appointmentDate": "2015-10-08",
+    "isInterim": false,
+    "results": ["W", "W", "W", "D", "W", "L", "W", "W", "D", "W"]
+  },
+  "Man City": {
+    "manager": "Pep Guardiola",
+    "appointmentDate": "2016-07-01",
+    "isInterim": false,
+    "results": ["W", "W", "D", "W", "W", "W", "L", "W", "D", "W"]
+  },
+  "Man United": {
+    "manager": "Erik ten Hag",
+    "appointmentDate": "2022-05-23",
+    "isInterim": false,
+    "results": ["W", "D", "W", "L", "W", "D", "D", "W", "L", "W"]
+  },
+  "Chelsea": {
+    "manager": "Mauricio Pochettino",
+    "appointmentDate": "2023-07-01",
+    "isInterim": false,
+    "results": ["D", "W", "L", "W", "D", "W", "W", "L", "D", "W"]
+  },
+  "Tottenham": {
+    "manager": "Ange Postecoglou",
+    "appointmentDate": "2023-06-06",
+    "isInterim": false,
+    "results": ["W", "W", "W", "D", "L", "W", "D", "W", "L", "D"]
+  },
+  "Newcastle": {
+    "manager": "Eddie Howe",
+    "appointmentDate": "2021-11-08",
+    "isInterim": false,
+    "results": ["W", "D", "W", "W", "L", "D", "W", "W", "D", "L"]
+  },
+  "Brighton": {
+    "manager": "Roberto De Zerbi",
+    "appointmentDate": "2022-09-18",
+    "isInterim": false,
+    "results": ["W", "D", "L", "W", "W", "D", "W", "L", "D", "W"]
+  },
+  "Aston Villa": {
+    "manager": "Unai Emery",
+    "appointmentDate": "2022-10-25",
+    "isInterim": false,
+    "results": ["W", "W", "D", "W", "L", "W", "W", "D", "W", "L"]
+  },
+  "West Ham": {
+    "manager": "David Moyes",
+    "appointmentDate": "2019-12-29",
+    "isInterim": false,
+    "results": ["D", "L", "W", "D", "L", "W", "D", "L", "W", "D"]
+  },
+  "Brentford": {
+    "manager": "Thomas Frank",
+    "appointmentDate": "2018-10-16",
+    "isInterim": false,
+    "results": ["D", "W", "L", "D", "W", "W", "D", "L", "W", "D"]
+  },
+  "Everton": {
+    "manager": "Sean Dyche",
+    "appointmentDate": "2023-01-30",
+    "isInterim": false,
+    "results": ["D", "L", "D", "W", "L", "D", "D", "W", "L", "D"]
+  },
+  "Crystal Palace": {
+    "manager": "Roy Hodgson",
+    "appointmentDate": "2023-03-27",
+    "isInterim": false,
+    "results": ["D", "L", "W", "D", "L", "D", "W", "L", "D", "D"]
+  },
+  "Fulham": {
+    "manager": "Marco Silva",
+    "appointmentDate": "2021-07-01",
+    "isInterim": false,
+    "results": ["W", "D", "L", "W", "W", "D", "L", "W", "D", "W"]
+  },
+  "Wolves": {
+    "manager": "Gary O'Neil",
+    "appointmentDate": "2023-08-08",
+    "isInterim": false,
+    "results": ["L", "D", "L", "W", "D", "L", "W", "D", "L", "D"]
+  },
+  "Bournemouth": {
+    "manager": "Andoni Iraola",
+    "appointmentDate": "2023-06-19",
+    "isInterim": false,
+    "results": ["L", "D", "W", "L", "D", "W", "L", "D", "W", "L"]
+  },
+  "Nottingham Forest": {
+    "manager": "Nuno Espirito Santo",
+    "appointmentDate": "2023-12-20",
+    "isInterim": false,
+    "results": ["W", "D", "W", "L", "D", "W", "D", "L", "W", "D"]
+  },
+  "Luton": {
+    "manager": "Rob Edwards",
+    "appointmentDate": "2022-11-11",
+    "isInterim": false,
+    "results": ["L", "D", "L", "W", "D", "L", "D", "L", "W", "D"]
+  },
+  "Burnley": {
+    "manager": "Vincent Kompany",
+    "appointmentDate": "2022-06-14",
+    "isInterim": false,
+    "results": ["L", "D", "L", "D", "W", "L", "D", "L", "W", "L"]
+  },
+  "Sheffield United": {
+    "manager": "Chris Wilder",
+    "appointmentDate": "2023-12-06",
+    "isInterim": false,
+    "results": ["L", "D", "L", "L", "D", "W", "L", "D", "L", "D"]
+  }
+}

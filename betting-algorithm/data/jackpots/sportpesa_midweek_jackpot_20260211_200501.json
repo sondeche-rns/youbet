@@ -1,0 +1,129 @@
+{
+  "provider": "SportPesa",
+  "type": "Midweek Jackpot",
+  "matches_count": 13,
+  "fetched_at": "2026-02-11T20:05:01.710531",
+  "url": "https://www.ke.sportpesa.com/en/jackpot",
+  "matches": [
+    {
+      "match_number": 1,
+      "home_team": "Arsenal",
+      "away_team": "Chelsea",
+      "competition": "Premier League",
+      "kickoff": "Sat 15:00"
+    },
+    {
+      "match_number": 2,
+      "home_team": "Man City",
+      "away_team": "Liverpool",
+      "competition": "Premier League",
+      "kickoff": "Sat 17:30"
+    },
+    {
+      "match_number": 3,
+      "home_team": "Tottenham",
+      "away_team": "Man United",
+      "competition": "Premier League",
+      "kickoff": "Sat 15:00"
+    },
+    {
+      "match_number": 4,
+      "home_team": "Real Madrid",
+      "away_team": "Barcelona",
+      "competition": "La Liga",
+      "kickoff": "Sat 20:00"
+    },
+    {
+      "match_number": 5,
+      "home_team": "Bayern Munich",
+      "away_team": "Dortmund",
+      "competition": "Bundesliga",
+      "kickoff": "Sat 17:30"
+    },
+    {
+      "match_number": 6,
+      "home_team": "Inter Milan",
+      "away_team": "AC Milan",
+      "competition": "Serie A",
+      "kickoff": "Sat 19:45"
+    },
+    {
+      "match_number": 7,
+      "home_team": "PSG",
+      "away_team": "Marseille",
+      "competition": "Ligue 1",
+      "kickoff": "Sat 20:00"
+    },
+    {
+      "match_number": 8,
+      "home_team": "Juventus",
+      "away_team": "Napoli",
+      "competition": "Serie A",
+      "kickoff": "Sat 17:00"
+    },
+    {
+      "match_number": 9,
+      "home_team": "Atletico Madrid",
+      "away_team": "Sevilla",
+      "competition": "La Liga",
+      "kickoff": "Sat 18:30"
+    },
+    {
+      "match_number": 10,
+      "home_team": "Leicester",
+      "away_team": "West Ham",
+      "competition": "Premier League",
+      "kickoff": "Sat 15:00"
+    },
+    {
+      "match_number": 11,
+      "home_team": "Newcastle",
+      "away_team": "Aston Villa",
+      "competition": "Premier League",
+      "kickoff": "Sat 15:00"
+    },
+    {
+      "match_number": 12,
+      "home_team": "Brighton",
+      "away_team": "Wolves",
+      "competition": "Premier League",
+      "kickoff": "Sat 15:00"
+    },
+    {
+      "match_number": 13,
+      "home_team": "Everton",
+      "away_team": "Southampton",
+      "competition": "Premier League",
+      "kickoff": "Sat 15:00"
+    },
+    {
+      "match_number": 14,
+      "home_team": "Leeds United",
+      "away_team": "Burnley",
+      "competition": "Championship",
+      "kickoff": "Sat 15:00"
+    },
+    {
+      "match_number": 15,
+      "home_team": "Sheffield United",
+      "away_team": "Norwich",
+      "competition": "Championship",
+      "kickoff": "Sat 15:00"
+    },
+    {
+      "match_number": 16,
+      "home_team": "Brentford",
+      "away_team": "Fulham",
+      "competition": "Premier League",
+      "kickoff": "Sat 15:00"
+    },
+    {
+      "match_number": 17,
+      "home_team": "Crystal Palace",
+      "away_team": "Bournemouth",
+      "competition": "Premier League",
+      "kickoff": "Sat 15:00"
+    }
+  ],
+  "prize_amount": null
+}

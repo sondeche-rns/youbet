@@ -879,575 +879,342 @@
                         </div>
                     </div>
                 </div>
-<!-- Recent Performance -->
-            <div class="card fade-in">
-                <div class="card-header">
-                    <h3 class="card-title">📈 Recent Performance</h3>
-                </div>
-                <div class="card-body">
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Match</th>
-                                    <th>Prediction</th>
-                                    <th>Result</th>
-                                    <th>Confidence</th>
-                                    <th>P&L</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Jan 18</td>
-                                    <td>Man City vs Tottenham</td>
-                                    <td>Home Win</td>
-                                    <td>2-1</td>
-                                    <td>85%</td>
-                                    <td style="color: var(--success);">+£27.50</td>
-                                    <td><span class="badge badge-success">✓ Won</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Jan 17</td>
-                                    <td>Arsenal vs Brighton</td>
-                                    <td>Home Win</td>
-                                    <td>3-0</td>
-                                    <td>78%</td>
-                                    <td style="color: var(--success);">+£22.00</td>
-                                    <td><span class="badge badge-success">✓ Won</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Jan 16</td>
-                                    <td>Chelsea vs Fulham</td>
-                                    <td>Draw</td>
-                                    <td>1-1</td>
-                                    <td>62%</td>
-                                    <td style="color: var(--success);">+£18.75</td>
-                                    <td><span class="badge badge-success">✓ Won</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Jan 15</td>
-                                    <td>Liverpool vs Newcastle</td>
-                                    <td>Home Win</td>
-                                    <td>1-2</td>
-                                    <td>71%</td>
-                                    <td style="color: var(--danger);">-£25.00</td>
-                                    <td><span class="badge badge-danger">✗ Lost</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
+
+                <!-- Recent Performance -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <h3 class="card-title">📈 Recent Performance</h3>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Backtest Page -->
-        <div id="backtest-page" class="page" style="display: none;">
-            <div class="header">
-                <div class="header-left">
-                    <h2>Backtesting Lab</h2>
-                    <div class="breadcrumb">Analysis / Backtesting</div>
-                </div>
-                <div class="header-actions">
-                    <button class="btn btn-success" onclick="runBacktest()">
-                        ▶️ Run New Backtest
-                    </button>
-                </div>
-            </div>
-
-            <!-- Backtest Configuration -->
-            <div class="card fade-in">
-                <div class="card-header">
-                    <h3 class="card-title">⚙️ Backtest Configuration</h3>
-                </div>
-                <div class="card-body">
-                    <div class="filters">
-                        <div class="filter-group">
-                            <label class="filter-label">Sport</label>
-                            <select>
-                                <option>Football (Premier League)</option>
-                                <option>Basketball (NBA)</option>
-                                <option>Tennis (ATP)</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label class="filter-label">Season</label>
-                            <select>
-                                <option>2023-24 (Complete)</option>
-                                <option>2022-23</option>
-                                <option>2021-22</option>
-                                <option>All Seasons</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label class="filter-label">Initial Bankroll</label>
-                            <input type="number" value="1000" placeholder="£1000">
-                        </div>
-                        <div class="filter-group">
-                            <label class="filter-label">Kelly Fraction</label>
-                            <select>
-                                <option>Quarter Kelly (25%)</option>
-                                <option>Half Kelly (50%)</option>
-                                <option>Full Kelly (100%)</option>
-                            </select>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Match</th>
+                                        <th>Prediction</th>
+                                        <th>Result</th>
+                                        <th>Confidence</th>
+                                        <th>P&L</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Jan 18</td>
+                                        <td>Man City vs Tottenham</td>
+                                        <td>Home Win</td>
+                                        <td>2-1</td>
+                                        <td>85%</td>
+                                        <td style="color: var(--success);">+£27.50</td>
+                                        <td><span class="badge badge-success">✓ Won</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Jan 17</td>
+                                        <td>Arsenal vs Brighton</td>
+                                        <td>Home Win</td>
+                                        <td>3-0</td>
+                                        <td>78%</td>
+                                        <td style="color: var(--success);">+£22.00</td>
+                                        <td><span class="badge badge-success">✓ Won</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Jan 16</td>
+                                        <td>Chelsea vs Fulham</td>
+                                        <td>Draw</td>
+                                        <td>1-1</td>
+                                        <td>62%</td>
+                                        <td style="color: var(--success);">+£18.75</td>
+                                        <td><span class="badge badge-success">✓ Won</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Jan 15</td>
+                                        <td>Liverpool vs Newcastle</td>
+                                        <td>Home Win</td>
+                                        <td>1-2</td>
+                                        <td>71%</td>
+                                        <td style="color: var(--danger);">-£25.00</td>
+                                        <td><span class="badge badge-danger">✗ Lost</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Backtest Results -->
-            <div class="stats-grid fade-in">
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <span class="stat-label">Backtest Accuracy</span>
-                        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.2); color: var(--success);">
-                            🎯
-                        </div>
-                    </div>
-                    <div class="stat-value">65.8%</div>
-                    <div class="stat-change positive">
-                        247/375 correct predictions
+            <!-- Data Collection Page -->
+            <div id="data-collection-page" class="page">
+                <div class="header">
+                    <div class="header-left">
+                        <h2>Data Collection Center</h2>
+                        <div class="breadcrumb">Data / Collection</div>
                     </div>
                 </div>
 
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <span class="stat-label">Final ROI</span>
-                        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.2); color: var(--info);">
-                            💎
-                        </div>
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <h3 class="card-title">📥 Historical Data Collection</h3>
                     </div>
-                    <div class="stat-value">+21.7%</div>
-                    <div class="stat-change positive">
-                        £1,000 → £1,217
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <span class="stat-label">Sharpe Ratio</span>
-                        <div class="stat-icon" style="background: rgba(139, 92, 246, 0.2); color: var(--secondary);">
-                            📊
-                        </div>
-                    </div>
-                    <div class="stat-value">1.82</div>
-                    <div class="stat-change positive">
-                        Excellent risk-adjusted return
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <span class="stat-label">Max Drawdown</span>
-                        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.2); color: var(--warning);">
-                            ⚠️
-                        </div>
-                    </div>
-                    <div class="stat-value">-12.3%</div>
-                    <div class="stat-change negative">
-                        Lowest: £877
-                    </div>
-                </div>
-            </div>
-
-            <!-- Detailed Results -->
-            <div class="card fade-in">
-                <div class="card-header">
-                    <h3 class="card-title">📋 Detailed Backtest Results</h3>
-                    <button class="btn btn-secondary" onclick="exportBacktest()">
-                        📥 Export CSV
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="tabs">
-                        <button class="tab active" onclick="switchTab('overview')">Overview</button>
-                        <button class="tab" onclick="switchTab('confidence')">By Confidence</button>
-                        <button class="tab" onclick="switchTab('type')">By Prediction Type</button>
-                        <button class="tab" onclick="switchTab('monthly')">Monthly</button>
-                    </div>
-
-                    <div id="overview-tab" class="tab-content active">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-                            <div>
-                                <h4 style="margin-bottom: 1rem;">Performance Metrics</h4>
-                                <div style="display: flex; flex-direction: column; gap: 1rem;">
-                                    <div style="display: flex; justify-content: space-between;">
-                                        <span>Total Matches:</span>
-                                        <strong>375</strong>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between;">
-                                        <span>Bets Placed:</span>
-                                        <strong>187 (49.9%)</strong>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between;">
-                                        <span>Bets Won:</span>
-                                        <strong style="color: var(--success);">123 (65.8%)</strong>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between;">
-                                        <span>Average Odds:</span>
-                                        <strong>2.34</strong>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between;">
-                                        <span>Profit Factor:</span>
-                                        <strong style="color: var(--success);">1.67</strong>
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <h4 style="margin-bottom: 1rem;">Bankroll Growth</h4>
-                                <div class="chart-container">
-                                    <div style="text-align: center;">
-                                        <p style="color: var(--text-muted); margin-bottom: 1rem;">Bankroll progression over time</p>
-                                        <div style="font-size: 3rem; color: var(--success);">📈</div>
-                                        <p style="margin-top: 1rem; font-size: 1.5rem; font-weight: 700;">+21.7%</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="confidence-tab" class="tab-content">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Confidence Range</th>
-                                    <th>Predictions</th>
-                                    <th>Accuracy</th>
-                                    <th>ROI</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>80%+</td>
-                                    <td>45</td>
-                                    <td><span class="badge badge-success">78.2%</span></td>
-                                    <td style="color: var(--success);">+28.4%</td>
-                                </tr>
-                                <tr>
-                                    <td>70-79%</td>
-                                    <td>82</td>
-                                    <td><span class="badge badge-success">71.3%</span></td>
-                                    <td style="color: var(--success);">+19.6%</td>
-                                </tr>
-                                <tr>
-                                    <td>60-69%</td>
-                                    <td>60</td>
-                                    <td><span class="badge badge-warning">62.1%</span></td>
-                                    <td style="color: var(--success);">+8.2%</td>
-                                </tr>
-                                <tr>
-                                    <td><60%</td>
-                                    <td>0</td>
-                                    <td><span class="badge badge-info">N/A</span></td>
-                                    <td>-</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Data Collection Page -->
-        <div id="data-collection-page" class="page" style="display: none;">
-            <div class="header">
-                <div class="header-left">
-                    <h2>Data Collection Center</h2>
-                    <div class="breadcrumb">Data / Collection</div>
-                </div>
-            </div>
-
-            <div class="card fade-in">
-                <div class="card-header">
-                    <h3 class="card-title">📥 Historical Data Collection</h3>
-                </div>
-                <div class="card-body">
-                    <p style="color: var(--text-muted); margin-bottom: 2rem;">
-                        Collect comprehensive historical data including match results, xG, odds, form, and advanced statistics from multiple free sources.
-                    </p>
-
-                    <div class="filters" style="margin-bottom: 2rem;">
-                        <div class="filter-group">
-                            <label class="filter-label">Sport</label>
-                            <select id="collection-sport">
-                                <option value="football">Football (Premier League)</option>
-                                <option value="basketball">Basketball (NBA)</option>
-                                <option value="tennis">Tennis (ATP)</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label class="filter-label">Seasons</label>
-                            <select id="collection-seasons" multiple style="height: 100px;">
-                                <option selected>2023-24</option>
-                                <option selected>2022-23</option>
-                                <option selected>2021-22</option>
-                                <option>2020-21</option>
-                                <option>2019-20</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div style="background: var(--dark-light); padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 2rem;">
-                        <h4 style="margin-bottom: 1rem;">Data Sources</h4>
-                        <div style="display: grid; gap: 0.75rem;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span style="color: var(--success);">✓</span>
-                                <span>Football-Data.co.uk (Match results & odds)</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span style="color: var(--success);">✓</span>
-                                <span>Expected Goals (xG) generation</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span style="color: var(--success);">✓</span>
-                                <span>Elo ratings calculation</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span style="color: var(--success);">✓</span>
-                                <span>Team form & rest day analysis</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span style="color: var(--success);">✓</span>
-                                <span>Advanced statistics (PPDA, possession, shots)</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button class="btn btn-primary" onclick="startDataCollection()" style="width: 100%;">
-                        🚀 Start Collection (Estimated: 10-15 minutes)
-                    </button>
-
-                    <div id="collection-progress" class="loading">
-                        <div class="spinner"></div>
-                        <h3>Collecting Historical Data...</h3>
-                        <p style="color: var(--text-muted); margin-top: 1rem;">
-                            Step <span id="current-step">1</span> of 7: <span id="step-description">Fetching match results...</span>
+                    <div class="card-body">
+                        <p style="color: var(--text-muted); margin-bottom: 2rem;">
+                            Collect comprehensive historical data including match results, xG, odds, form, and advanced statistics.
                         </p>
-                        <div class="progress" style="max-width: 400px; margin: 1.5rem auto; height: 12px;">
-                            <div class="progress-bar" id="collection-progress-bar" style="width: 14%"></div>
+
+                        <div class="filters" style="margin-bottom: 2rem;">
+                            <div class="filter-group">
+                                <label class="filter-label">Sport</label>
+                                <select>
+                                    <option>Football (Premier League)</option>
+                                    <option>Basketball (NBA)</option>
+                                    <option>Tennis (ATP)</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Seasons</label>
+                                <select style="height: 80px;">
+                                    <option>2023-24</option>
+                                    <option>2022-23</option>
+                                    <option>2021-22</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="startCollection()" style="width: 100%;">
+                            🚀 Start Collection (10-15 minutes)
+                        </button>
+
+                        <div id="collection-progress" class="loading">
+                            <div class="spinner"></div>
+                            <h3>Collecting Historical Data...</h3>
+                            <p style="color: var(--text-muted); margin-top: 1rem;">
+                                Step <span id="current-step">1</span> of 7
+                            </p>
+                            <div class="progress" style="max-width: 400px; margin: 1.5rem auto;">
+                                <div class="progress-bar" id="progress-bar" style="width: 14%"></div>
+                            </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div id="collection-results" style="display: none; margin-top: 2rem; padding: 1.5rem; background: rgba(16, 185, 129, 0.1); border-radius: 0.5rem; border: 1px solid var(--success);">
-                        <h4 style="color: var(--success); margin-bottom: 1rem;">✅ Collection Complete!</h4>
-                        <div style="display: grid; gap: 0.5rem;">
-                            <div><strong>Total Matches:</strong> <span id="total-matches">1,248</span></div>
-                            <div><strong>Date Range:</strong> <span id="date-range">2020-08-01 to 2024-05-19</span></div>
-                            <div><strong>Teams:</strong> <span id="total-teams">20</span></div>
-                            <div><strong>Data Quality:</strong> <span style="color: var(--success);">✓ No missing data</span></div>
-                        </div>
-                        <button class="btn btn-primary" onclick="viewHistoricalData()" style="margin-top: 1rem; width: 100%;">
-                            View Historical Data →
+            <!-- Backtest Page -->
+            <div id="backtest-page" class="page">
+                <div class="header">
+                    <div class="header-left">
+                        <h2>Backtesting Lab</h2>
+                        <div class="breadcrumb">Analysis / Backtesting</div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-success" onclick="alert('Starting backtest...')">
+                            ▶️ Run New Backtest
                         </button>
                     </div>
                 </div>
-            </div>
-        </div>
-    </main>
-</div>
 
-<!-- Match Details Modal -->
-<div id="match-modal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>🎯 Match Analysis</h3>
-            <button class="modal-close" onclick="closeModal()">×</button>
-        </div>
-        <div class="modal-body">
-            <div style="text-align: center; margin-bottom: 2rem;">
-                <h2>Arsenal vs Chelsea</h2>
-                <p style="color: var(--text-muted);">Premier League • Today 15:00</p>
-            </div>
+                <div class="stats-grid fade-in">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Backtest Accuracy</span>
+                            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.2); color: var(--success);">
+                                🎯
+                            </div>
+                        </div>
+                        <div class="stat-value">65.8%</div>
+                        <div class="stat-change positive">
+                            247/375 correct
+                        </div>
+                    </div>
 
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem;">
-                <div style="text-align: center; padding: 1rem; background: var(--dark-light); border-radius: 0.5rem;">
-                    <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">Home Win</div>
-                    <div style="font-size: 2rem; font-weight: 700; color: var(--success);">58%</div>
-                </div>
-                <div style="text-align: center; padding: 1rem; background: var(--dark-light); border-radius: 0.5rem;">
-                    <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">Draw</div>
-                    <div style="font-size: 2rem; font-weight: 700; color: var(--warning);">23%</div>
-                </div>
-                <div style="text-align: center; padding: 1rem; background: var(--dark-light); border-radius: 0.5rem;">
-                    <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">Away Win</div>
-                    <div style="font-size: 2rem; font-weight: 700; color: var(--danger);">19%</div>
-                </div>
-            </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Final ROI</span>
+                            <div class="stat-icon" style="background: rgba(59, 130, 246, 0.2); color: var(--info);">
+                                💎
+                            </div>
+                        </div>
+                        <div class="stat-value">+21.7%</div>
+                        <div class="stat-change positive">
+                            £1,000 → £1,217
+                        </div>
+                    </div>
 
-            <h4 style="margin-bottom: 1rem;">Prediction Factors</h4>
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span>Expected Goals (xG)</span>
-                        <span style="font-weight: 700;">+0.5 Arsenal</span>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Sharpe Ratio</span>
+                            <div class="stat-icon" style="background: rgba(139, 92, 246, 0.2); color: var(--secondary);">
+                                📊
+                            </div>
+                        </div>
+                        <div class="stat-value">1.82</div>
+                        <div class="stat-change positive">
+                            Excellent
+                        </div>
                     </div>
-                    <div class="progress">
-                        <div class="progress-bar" style="width: 65%; background: var(--success);"></div>
-                    </div>
-                </div>
-                <div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span>Team Strength (Elo)</span>
-                        <span style="font-weight: 700;">Arsenal 2050 vs 1950</span>
-                    </div>
-                    <div class="progress">
-                        <div class="progress-bar" style="width: 60%; background: var(--info);"></div>
-                    </div>
-                </div>
-                <div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span>Current Form</span>
-                        <span style="font-weight: 700;">WWWDW vs WLDWL</span>
-                    </div>
-                    <div class="progress">
-                        <div class="progress-bar" style="width: 70%; background: var(--success);"></div>
-                    </div>
-                </div>
-                <div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span>Home Advantage</span>
-                        <span style="font-weight: 700;">Emirates +10%</span>
-                    </div>
-                    <div class="progress">
-                        <div class="progress-bar" style="width: 55%; background: var(--warning);"></div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Max Drawdown</span>
+                            <div class="stat-icon" style="background: rgba(245, 158, 11, 0.2); color: var(--warning);">
+                                ⚠️
+                            </div>
+                        </div>
+                        <div class="stat-value">-12.3%</div>
+                        <div class="stat-change negative">
+                            Lowest: £877
+                        </div>
                     </div>
                 </div>
             </div>
+        </main>
+    </div>
 
-            <div style="margin-top: 2rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 0.5rem;">
-                <h4 style="margin-bottom: 0.5rem; color: var(--primary);">💡 Recommendation</h4>
-                <p><strong>Strong Bet</strong> on Arsenal to Win</p>
-                <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.5rem;">
-                    Suggested stake: 3% of bankroll (£30 at £1000 bankroll)<br>
-                    Expected value: +12.3% | Confidence: 82%
-                </p>
+    <!-- Match Details Modal -->
+    <div id="match-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🎯 Match Analysis</h3>
+                <button class="modal-close" onclick="closeMatchModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h2>Arsenal vs Chelsea</h2>
+                    <p style="color: var(--text-muted);">Premier League • Today 15:00</p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem;">
+                    <div style="text-align: center; padding: 1rem; background: var(--dark-light); border-radius: 0.5rem;">
+                        <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">Home Win</div>
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--success);">58%</div>
+                    </div>
+                    <div style="text-align: center; padding: 1rem; background: var(--dark-light); border-radius: 0.5rem;">
+                        <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">Draw</div>
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--warning);">23%</div>
+                    </div>
+                    <div style="text-align: center; padding: 1rem; background: var(--dark-light); border-radius: 0.5rem;">
+                        <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">Away Win</div>
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--danger);">19%</div>
+                    </div>
+                </div>
+
+                <h4 style="margin-bottom: 1rem;">Prediction Factors</h4>
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Expected Goals (xG)</span>
+                            <span style="font-weight: 700;">+0.5 Arsenal</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: 65%; background: var(--success);"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Team Strength (Elo)</span>
+                            <span style="font-weight: 700;">2050 vs 1950</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: 60%; background: var(--info);"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Current Form</span>
+                            <span style="font-weight: 700;">WWWDW vs WLDWL</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: 70%; background: var(--success);"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Home Advantage</span>
+                            <span style="font-weight: 700;">Emirates +10%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: 55%; background: var(--warning);"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 0.5rem;">
+                    <h4 style="margin-bottom: 0.5rem; color: var(--primary);">💡 Recommendation</h4>
+                    <p><strong>Strong Bet</strong> on Arsenal to Win</p>
+                    <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.5rem;">
+                        Suggested stake: 3% of bankroll<br>
+                        Expected value: +12.3% | Confidence: 82%
+                    </p>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<script>
-    // Navigation
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const page = this.dataset.page;
-            
-            // Update active nav
-            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Show page
-            document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-            document.getElementById(page + '-page').style.display = 'block';
+    <script>
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const page = this.dataset.page;
+                
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+                
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                const targetPage = document.getElementById(page + '-page');
+                if (targetPage) {
+                    targetPage.classList.add('active');
+                }
+            });
         });
-    });
 
-    // Modal
-    function showMatchDetails(matchId) {
-        document.getElementById('match-modal').classList.add('active');
-    }
-
-    function closeModal() {
-        document.getElementById('match-modal').classList.remove('active');
-    }
-
-    // Data Collection
-    function startDataCollection() {
-        const progressDiv = document.getElementById('collection-progress');
-        const resultsDiv = document.getElementById('collection-results');
-        const progressBar = document.getElementById('collection-progress-bar');
-        const stepLabel = document.getElementById('step-description');
-        const currentStep = document.getElementById('current-step');
-        
-        progressDiv.classList.add('active');
-        resultsDiv.style.display = 'none';
-        
-        const steps = [
-            'Fetching match results from Football-Data.co.uk...',
-            'Generating Expected Goals (xG) data...',
-            'Calculating Elo ratings...',
-            'Computing team form...',
-            'Analyzing rest days and fixture congestion...',
-            'Adding advanced statistics...',
-            'Calculating league positions...'
-        ];
-        
-        let step = 0;
-        const interval = setInterval(() => {
-            step++;
-            if (step <= steps.length) {
-                currentStep.textContent = step;
-                stepLabel.textContent = steps[step - 1];
-                progressBar.style.width = (step / steps.length * 100) + '%';
-            } else {
-                clearInterval(interval);
-                progressDiv.classList.remove('active');
-                resultsDiv.style.display = 'block';
-            }
-        }, 2000);
-    }
-
-    function showDataCollectionModal() {
-        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-        document.querySelector('[data-page="data-collection"]').classList.add('active');
-        document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-        document.getElementById('data-collection-page').style.display = 'block';
-    }
-
-    // Tabs
-    function switchTab(tabName) {
-        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-        
-        event.target.classList.add('active');
-        document.getElementById(tabName + '-tab').classList.add('active');
-    }
-
-    // Backtest
-    function runBacktest() {
-        alert('Starting backtest... This will take a few minutes.');
-        // In production: call Python backend API
-    }
-
-    function exportBacktest() {
-        alert('Exporting backtest results to CSV...');
-        // In production: download CSV file
-    }
-
-    function refreshData() {
-        alert('Refreshing data...');
-        location.reload();
-    }
-
-    function viewAllPredictions() {
-        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-        document.querySelector('[data-page="predictions"]').classList.add('active');
-        document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-        document.getElementById('predictions-page').style.display = 'block';
-    }
-
-    function viewHistoricalData() {
-        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-        document.querySelector('[data-page="historical"]').classList.add('active'));
-        document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-        document.getElementById('historical-page').style.display = 'block';
-    }
-
-    // Close modal on outside click
-    window.onclick = function(event) {
-        const modal = document.getElementById('match-modal');
-        if (event.target == modal) {
-            modal.classList.remove('active');
+        // Modal functions
+        function showMatchModal() {
+            document.getElementById('match-modal').classList.add('active');
         }
-    }
 
-    // Animate stats on load
-    window.addEventListener('load', () => {
-        document.querySelectorAll('.progress-bar').forEach((bar, index) => {
-            setTimeout(() => {
-                bar.style.width = bar.style.width;
-            }, index * 100);
-        });
-    });
-</script>
+        function closeMatchModal() {
+            document.getElementById('match-modal').classList.remove('active');
+        }
+
+        // Data collection
+        function startCollection() {
+            const progress = document.getElementById('collection-progress');
+            progress.classList.add('active');
+            
+            let step = 0;
+            const interval = setInterval(() => {
+                step++;
+                document.getElementById('current-step').textContent = step;
+                document.getElementById('progress-bar').style.width = (step / 7 * 100) + '%';
+                
+                if (step >= 7) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        progress.classList.remove('active');
+                        alert('Data collection complete! 1,248 matches collected.');
+                    }, 1000);
+                }
+            }, 2000);
+        }
+
+        function showDataCollectionPage() {
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            document.querySelector('[data-page="data-collection"]').classList.add('active');
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('data-collection-page').classList.add('active');
+        }
+
+        function refreshData() {
+            alert('Refreshing data...');
+            location.reload();
+        }
+
+        // Close modal on outside click
+        window.onclick = function(event) {
+            const modal = document.getElementById('match-modal');
+            if (event.target == modal) {
+                modal.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>
