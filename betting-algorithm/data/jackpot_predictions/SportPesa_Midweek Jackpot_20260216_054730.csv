@@ -1,0 +1,18 @@
+match_number,home_team,away_team,prediction,confidence,home_prob,draw_prob,away_prob,recommendation
+1,Arsenal,Chelsea,Home,0.7216,0.516,0.2387,0.2452,No Bet
+2,Man City,Liverpool,Home,0.7233,0.5177,0.2363,0.246,No Bet
+3,Tottenham,Man United,Away,0.6029,0.316,0.2902,0.3938,No Bet
+4,Real Madrid,Barcelona,Home,0.6541,0.3494,0.3027,0.3479,No Bet
+5,Bayern Munich,Dortmund,Home,0.6541,0.3494,0.3027,0.3479,No Bet
+6,Inter Milan,AC Milan,Home,0.6541,0.3494,0.3027,0.3479,No Bet
+7,PSG,Marseille,Home,0.6541,0.3494,0.3027,0.3479,No Bet
+8,Juventus,Napoli,Home,0.6541,0.3494,0.3027,0.3479,No Bet
+9,Atletico Madrid,Sevilla,Home,0.6541,0.3494,0.3027,0.3479,No Bet
+10,Leicester,West Ham,Home,0.6867,0.442,0.3027,0.2553,No Bet
+11,Newcastle,Aston Villa,Away,0.6297,0.3559,0.2868,0.3573,No Bet
+12,Brighton,Wolves,Home,0.7229,0.5546,0.2641,0.1813,No Bet
+13,Everton,Southampton,Home,0.6619,0.4024,0.2907,0.3069,No Bet
+14,Leeds United,Burnley,Home,0.7034,0.481,0.2952,0.2237,No Bet
+15,Sheffield United,Norwich,Home,0.6541,0.3494,0.3027,0.3479,No Bet
+16,Brentford,Fulham,Home,0.7027,0.4682,0.2725,0.2593,No Bet
+17,Crystal Palace,Bournemouth,Home,0.6384,0.3622,0.3141,0.3237,No Bet

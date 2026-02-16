@@ -1,12 +1,14 @@
 """
-Jackpot Fetcher - Scrapes jackpot matches from Kenyan betting sites
+Jackpot Fetcher - Scrapes jackpot matches from Kenyan betting sites using Selenium
 
 Supports:
 - SportPesa (Mega Jackpot, Midweek Jackpot)
 - Betika (Jackpot)
 
+Uses Selenium with headless Chrome for JavaScript-rendered content.
+
 Author: AI Betting Algorithm
-Date: 2026-02-11
+Date: 2026-02-16
 """
 
 import requests
@@ -17,17 +19,137 @@ from typing import Dict, List, Optional
 from pathlib import Path
 import pandas as pd
 import re
+import time
+import logging
+
+# Selenium imports
+try:
+    from selenium import webdriver
+    from selenium.webdriver.chrome.service import Service
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.common.exceptions import TimeoutException, WebDriverException
+    from webdriver_manager.chrome import ChromeDriverManager
+    SELENIUM_AVAILABLE = True
+except ImportError:
+    SELENIUM_AVAILABLE = False
+    logging.warning("Selenium not available. Install with: pip install selenium webdriver-manager")
+
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class JackpotFetcher:
-    """Fetches jackpot matches from Kenyan betting sites"""
+    """Fetches jackpot matches from Kenyan betting sites using Selenium"""
 
-    def __init__(self):
+    def __init__(self, use_selenium: bool = True, headless: bool = True, timeout: int = 30):
+        """
+        Initialize the JackpotFetcher
+
+        Args:
+            use_selenium: Whether to use Selenium (True) or fall back to requests (False)
+            headless: Whether to run Chrome in headless mode
+            timeout: Timeout in seconds for page loads
+        """
+        self.use_selenium = use_selenium and SELENIUM_AVAILABLE
+        self.headless = headless
+        self.timeout = timeout
+
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
         self.history_dir = Path('./data/jackpots')
         self.history_dir.mkdir(parents=True, exist_ok=True)
+
+        if not SELENIUM_AVAILABLE and use_selenium:
+            logger.warning("Selenium requested but not available. Falling back to sample data mode.")
+            self.use_selenium = False
+
+    def _create_driver(self) -> webdriver.Chrome:
+        """Create and configure a Chrome WebDriver instance"""
+        try:
+            chrome_options = Options()
+
+            if self.headless:
+                chrome_options.add_argument('--headless=new')
+
+            # Additional options for stability
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+            chrome_options.add_argument(f'user-agent={self.headers["User-Agent"]}')
+            chrome_options.add_argument('--window-size=1920,1080')
+
+            # Suppress logging
+            chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
+
+            # Use webdriver-manager to automatically handle driver installation
+            service = Service(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            driver.set_page_load_timeout(self.timeout)
+
+            logger.info("✅ Chrome WebDriver initialized successfully")
+            return driver
+
+        except Exception as e:
+            logger.error(f"❌ Failed to create Chrome driver: {e}")
+            raise
+
+    def _fetch_page_with_selenium(self, url: str, wait_for_selector: Optional[str] = None,
+                                   wait_time: int = 10) -> Optional[str]:
+        """
+        Fetch a page using Selenium and wait for JavaScript to render
+
+        Args:
+            url: URL to fetch
+            wait_for_selector: CSS selector to wait for (optional)
+            wait_time: Time to wait for selector in seconds
+
+        Returns:
+            Page HTML source or None if failed
+        """
+        driver = None
+        try:
+            driver = self._create_driver()
+            logger.info(f"🌐 Fetching: {url}")
+
+            driver.get(url)
+
+            # Wait for specific element if provided
+            if wait_for_selector:
+                try:
+                    WebDriverWait(driver, wait_time).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, wait_for_selector))
+                    )
+                    logger.info(f"✅ Found element: {wait_for_selector}")
+                except TimeoutException:
+                    logger.warning(f"⚠️ Timeout waiting for selector: {wait_for_selector}")
+            else:
+                # Generic wait for page to stabilize
+                time.sleep(5)
+
+            # Additional wait for dynamic content
+            time.sleep(2)
+
+            html = driver.page_source
+            logger.info(f"✅ Page loaded successfully ({len(html)} bytes)")
+
+            return html
+
+        except WebDriverException as e:
+            logger.error(f"❌ WebDriver error: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"❌ Error fetching page: {e}")
+            return None
+        finally:
+            if driver:
+                driver.quit()
 
     def fetch_sportpesa_mega_jackpot(self) -> Optional[Dict]:
         """
@@ -36,14 +158,12 @@ class JackpotFetcher:
         Returns:
             Dict with jackpot details and matches
         """
-        print("Fetching SportPesa Mega Jackpot...")
+        logger.info("=" * 70)
+        logger.info("Fetching SportPesa Mega Jackpot...")
+        logger.info("=" * 70)
 
         try:
             url = "https://www.ke.sportpesa.com/en/mega-jackpot-pro"
-            response = requests.get(url, headers=self.headers, timeout=15)
-            response.raise_for_status()
-
-            soup = BeautifulSoup(response.content, 'html.parser')
 
             jackpot_data = {
                 'provider': 'SportPesa',
@@ -51,29 +171,61 @@ class JackpotFetcher:
                 'matches_count': 17,
                 'fetched_at': datetime.now().isoformat(),
                 'url': url,
-                'matches': []
+                'matches': [],
+                'data_source': 'selenium' if self.use_selenium else 'sample'
             }
 
-            # Try to extract prize amount
-            jackpot_data['prize_amount'] = self._extract_prize_amount(soup)
+            if self.use_selenium:
+                # Use Selenium to fetch the page
+                html = self._fetch_page_with_selenium(
+                    url,
+                    wait_for_selector='div.jackpot-match, .match-row, [class*="match"]',
+                    wait_time=15
+                )
 
-            # Extract matches
-            matches = self._extract_sportpesa_matches(soup)
-            jackpot_data['matches'] = matches
+                if html:
+                    soup = BeautifulSoup(html, 'html.parser')
+
+                    # Try to extract prize amount
+                    jackpot_data['prize_amount'] = self._extract_prize_amount(soup)
+
+                    # Extract matches
+                    matches = self._extract_sportpesa_matches(soup)
+                    jackpot_data['matches'] = matches
+                else:
+                    logger.warning("Failed to fetch page with Selenium, using sample data")
+                    jackpot_data['matches'] = self._get_sample_sportpesa_matches()
+                    jackpot_data['data_source'] = 'sample'
+            else:
+                # Fall back to sample data
+                logger.info("Selenium disabled, using sample data")
+                jackpot_data['matches'] = self._get_sample_sportpesa_matches()
 
             # Save to history
             self._save_jackpot_history(jackpot_data)
 
-            print(f"✅ Fetched {len(matches)} matches from SportPesa Mega Jackpot")
-            print(f"💰 Prize: {jackpot_data.get('prize_amount', 'Unknown')}")
+            logger.info(f"✅ Fetched {len(jackpot_data['matches'])} matches from SportPesa Mega Jackpot")
+            logger.info(f"💰 Prize: {jackpot_data.get('prize_amount', 'Unknown')}")
+            logger.info(f"📊 Data Source: {jackpot_data['data_source']}")
 
             return jackpot_data
 
         except Exception as e:
-            print(f"❌ Error fetching SportPesa Mega Jackpot: {e}")
+            logger.error(f"❌ Error fetching SportPesa Mega Jackpot: {e}")
             import traceback
             traceback.print_exc()
-            return None
+
+            # Return sample data as fallback
+            return {
+                'provider': 'SportPesa',
+                'type': 'Mega Jackpot',
+                'matches_count': 17,
+                'fetched_at': datetime.now().isoformat(),
+                'url': url,
+                'matches': self._get_sample_sportpesa_matches(),
+                'data_source': 'sample_fallback',
+                'error': str(e)
+            }
 
     def fetch_sportpesa_midweek_jackpot(self) -> Optional[Dict]:
         """
@@ -82,14 +234,12 @@ class JackpotFetcher:
         Returns:
             Dict with jackpot details and matches
         """
-        print("Fetching SportPesa Midweek Jackpot...")
+        logger.info("=" * 70)
+        logger.info("Fetching SportPesa Midweek Jackpot...")
+        logger.info("=" * 70)
 
         try:
             url = "https://www.ke.sportpesa.com/en/jackpot"
-            response = requests.get(url, headers=self.headers, timeout=15)
-            response.raise_for_status()
-
-            soup = BeautifulSoup(response.content, 'html.parser')
 
             jackpot_data = {
                 'provider': 'SportPesa',
@@ -97,29 +247,61 @@ class JackpotFetcher:
                 'matches_count': 13,
                 'fetched_at': datetime.now().isoformat(),
                 'url': url,
-                'matches': []
+                'matches': [],
+                'data_source': 'selenium' if self.use_selenium else 'sample'
             }
 
-            # Try to extract prize amount
-            jackpot_data['prize_amount'] = self._extract_prize_amount(soup)
+            if self.use_selenium:
+                # Use Selenium to fetch the page
+                html = self._fetch_page_with_selenium(
+                    url,
+                    wait_for_selector='div.jackpot-match, .match-row, [class*="match"]',
+                    wait_time=15
+                )
 
-            # Extract matches
-            matches = self._extract_sportpesa_matches(soup)
-            jackpot_data['matches'] = matches
+                if html:
+                    soup = BeautifulSoup(html, 'html.parser')
+
+                    # Try to extract prize amount
+                    jackpot_data['prize_amount'] = self._extract_prize_amount(soup)
+
+                    # Extract matches
+                    matches = self._extract_sportpesa_matches(soup)
+                    jackpot_data['matches'] = matches
+                else:
+                    logger.warning("Failed to fetch page with Selenium, using sample data")
+                    jackpot_data['matches'] = self._get_sample_sportpesa_matches()[:13]
+                    jackpot_data['data_source'] = 'sample'
+            else:
+                # Fall back to sample data
+                logger.info("Selenium disabled, using sample data")
+                jackpot_data['matches'] = self._get_sample_sportpesa_matches()[:13]
 
             # Save to history
             self._save_jackpot_history(jackpot_data)
 
-            print(f"✅ Fetched {len(matches)} matches from SportPesa Midweek Jackpot")
-            print(f"💰 Prize: {jackpot_data.get('prize_amount', 'Unknown')}")
+            logger.info(f"✅ Fetched {len(jackpot_data['matches'])} matches from SportPesa Midweek Jackpot")
+            logger.info(f"💰 Prize: {jackpot_data.get('prize_amount', 'Unknown')}")
+            logger.info(f"📊 Data Source: {jackpot_data['data_source']}")
 
             return jackpot_data
 
         except Exception as e:
-            print(f"❌ Error fetching SportPesa Midweek Jackpot: {e}")
+            logger.error(f"❌ Error fetching SportPesa Midweek Jackpot: {e}")
             import traceback
             traceback.print_exc()
-            return None
+
+            # Return sample data as fallback
+            return {
+                'provider': 'SportPesa',
+                'type': 'Midweek Jackpot',
+                'matches_count': 13,
+                'fetched_at': datetime.now().isoformat(),
+                'url': url,
+                'matches': self._get_sample_sportpesa_matches()[:13],
+                'data_source': 'sample_fallback',
+                'error': str(e)
+            }
 
     def fetch_betika_jackpot(self) -> Optional[Dict]:
         """
@@ -128,88 +310,137 @@ class JackpotFetcher:
         Returns:
             Dict with jackpot details and matches
         """
-        print("Fetching Betika Jackpot...")
+        logger.info("=" * 70)
+        logger.info("Fetching Betika Jackpot...")
+        logger.info("=" * 70)
 
         try:
             url = "https://www.betika.com/en-ke/jackpot"
-            response = requests.get(url, headers=self.headers, timeout=15)
-            response.raise_for_status()
-
-            soup = BeautifulSoup(response.content, 'html.parser')
 
             jackpot_data = {
                 'provider': 'Betika',
                 'type': 'Jackpot',
                 'fetched_at': datetime.now().isoformat(),
                 'url': url,
-                'matches': []
+                'matches': [],
+                'data_source': 'selenium' if self.use_selenium else 'sample'
             }
 
-            # Try to extract prize amount
-            jackpot_data['prize_amount'] = self._extract_prize_amount(soup)
+            if self.use_selenium:
+                # Use Selenium to fetch the page
+                html = self._fetch_page_with_selenium(
+                    url,
+                    wait_for_selector='div.jackpot-match, .match-row, [class*="match"]',
+                    wait_time=15
+                )
 
-            # Extract matches
-            matches = self._extract_betika_matches(soup)
-            jackpot_data['matches'] = matches
-            jackpot_data['matches_count'] = len(matches)
+                if html:
+                    soup = BeautifulSoup(html, 'html.parser')
+
+                    # Try to extract prize amount
+                    jackpot_data['prize_amount'] = self._extract_prize_amount(soup)
+
+                    # Extract matches
+                    matches = self._extract_betika_matches(soup)
+                    jackpot_data['matches'] = matches
+                    jackpot_data['matches_count'] = len(matches)
+                else:
+                    logger.warning("Failed to fetch page with Selenium, using sample data")
+                    jackpot_data['matches'] = self._get_sample_betika_matches()
+                    jackpot_data['matches_count'] = len(jackpot_data['matches'])
+                    jackpot_data['data_source'] = 'sample'
+            else:
+                # Fall back to sample data
+                logger.info("Selenium disabled, using sample data")
+                jackpot_data['matches'] = self._get_sample_betika_matches()
+                jackpot_data['matches_count'] = len(jackpot_data['matches'])
 
             # Save to history
             self._save_jackpot_history(jackpot_data)
 
-            print(f"✅ Fetched {len(matches)} matches from Betika Jackpot")
-            print(f"💰 Prize: {jackpot_data.get('prize_amount', 'Unknown')}")
+            logger.info(f"✅ Fetched {len(jackpot_data['matches'])} matches from Betika Jackpot")
+            logger.info(f"💰 Prize: {jackpot_data.get('prize_amount', 'Unknown')}")
+            logger.info(f"📊 Data Source: {jackpot_data['data_source']}")
 
             return jackpot_data
 
         except Exception as e:
-            print(f"❌ Error fetching Betika Jackpot: {e}")
+            logger.error(f"❌ Error fetching Betika Jackpot: {e}")
             import traceback
             traceback.print_exc()
-            return None
+
+            # Return sample data as fallback
+            return {
+                'provider': 'Betika',
+                'type': 'Jackpot',
+                'fetched_at': datetime.now().isoformat(),
+                'url': url,
+                'matches': self._get_sample_betika_matches(),
+                'matches_count': 15,
+                'data_source': 'sample_fallback',
+                'error': str(e)
+            }
 
     def _extract_sportpesa_matches(self, soup: BeautifulSoup) -> List[Dict]:
         """Extract match details from SportPesa page"""
         matches = []
 
-        print("\n[DEBUG] Starting SportPesa match extraction...")
+        logger.info("\n[DEBUG] Starting SportPesa match extraction...")
 
-        # SportPesa loads jackpots via JavaScript/iframe - check for the iframe URL
-        iframe = soup.find('iframe', src=re.compile(r'jackpot', re.I))
-        if iframe:
-            print(f"[INFO] Found jackpot iframe: {iframe.get('src')}")
-            print("[WARNING] SportPesa loads jackpots dynamically via iframe.")
-            print("[WARNING] Simple HTML scraping cannot extract this data.")
-            print("[WARNING] You may need to:")
-            print("  1. Use Selenium with a headless browser")
-            print("  2. Find an API endpoint (if available)")
-            print("  3. Manually input jackpot data")
-            print("\n[INFO] Returning sample data for testing purposes...\n")
-            return self._get_sample_sportpesa_matches()
+        # Try multiple selectors for match containers
+        selectors = [
+            'div.jackpot-match',
+            'div.match-row',
+            'div[class*="match"]',
+            'tr[class*="match"]',
+            'li[class*="match"]',
+            'div[class*="game"]',
+            'div[class*="event"]'
+        ]
 
-        # Try multiple selectors (HTML structure may vary)
-        # Look for match containers, rows, or list items
-        match_elements = (
-            soup.find_all('div', class_=re.compile(r'match|game|event', re.I)) or
-            soup.find_all('tr', class_=re.compile(r'match|game|event', re.I)) or
-            soup.find_all('li', class_=re.compile(r'match|game|event', re.I))
-        )
-
-        print(f"[DEBUG] Found {len(match_elements)} potential match elements")
+        match_elements = []
+        for selector in selectors:
+            elements = soup.select(selector)
+            if elements:
+                logger.info(f"[DEBUG] Found {len(elements)} elements with selector: {selector}")
+                match_elements = elements
+                break
 
         if not match_elements:
-            print("[WARNING] No match elements found with current selectors")
-            print("[INFO] Page may use dynamic JavaScript rendering")
-            print("[INFO] Returning sample data for testing...\n")
+            logger.warning("[WARNING] No match elements found with any selector")
+            logger.info("[INFO] Returning sample data for testing...\n")
             return self._get_sample_sportpesa_matches()
+
+        logger.info(f"[DEBUG] Processing {len(match_elements)} potential match elements")
 
         for idx, element in enumerate(match_elements[:20]):  # Limit to first 20
             try:
-                # Try to extract team names
-                teams = element.find_all(class_=re.compile(r'team|opponent', re.I))
+                # Try to extract team names with multiple strategies
+                teams = []
+
+                # Strategy 1: Look for team-specific classes
+                team_elements = element.find_all(class_=re.compile(r'team|opponent', re.I))
+                if team_elements and len(team_elements) >= 2:
+                    teams = [t.get_text(strip=True) for t in team_elements[:2]]
+
+                # Strategy 2: Look for specific team containers
+                if not teams:
+                    home = element.find(class_=re.compile(r'home', re.I))
+                    away = element.find(class_=re.compile(r'away', re.I))
+                    if home and away:
+                        teams = [home.get_text(strip=True), away.get_text(strip=True)]
+
+                # Strategy 3: Look for spans or divs with team names
+                if not teams:
+                    text_elements = element.find_all(['span', 'div', 'p'])
+                    team_names = [t.get_text(strip=True) for t in text_elements
+                                 if t.get_text(strip=True) and len(t.get_text(strip=True)) > 3]
+                    if len(team_names) >= 2:
+                        teams = team_names[:2]
 
                 if len(teams) >= 2:
-                    home_team = teams[0].get_text(strip=True)
-                    away_team = teams[1].get_text(strip=True)
+                    home_team = teams[0]
+                    away_team = teams[1]
 
                     # Skip if team names are empty or invalid
                     if not home_team or not away_team or len(home_team) < 3 or len(away_team) < 3:
@@ -223,7 +454,7 @@ class JackpotFetcher:
                     comp_elem = element.find(class_=re.compile(r'league|competition|tournament', re.I))
                     competition = comp_elem.get_text(strip=True) if comp_elem else None
 
-                    print(f"[DEBUG] Extracted match {idx + 1}: {home_team} vs {away_team}")
+                    logger.info(f"[DEBUG] Extracted match {len(matches) + 1}: {home_team} vs {away_team}")
 
                     matches.append({
                         'match_number': len(matches) + 1,
@@ -233,45 +464,69 @@ class JackpotFetcher:
                         'competition': competition
                     })
             except Exception as e:
-                print(f"[DEBUG] Error extracting match {idx + 1}: {e}")
+                logger.debug(f"[DEBUG] Error extracting match {idx + 1}: {e}")
                 continue
 
         if not matches:
-            print("[WARNING] No valid matches extracted from page")
-            print("[INFO] Returning sample data for testing...\n")
+            logger.warning("[WARNING] No valid matches extracted from page")
+            logger.info("[INFO] Returning sample data for testing...\n")
             return self._get_sample_sportpesa_matches()
 
-        print(f"[SUCCESS] Extracted {len(matches)} matches\n")
+        logger.info(f"[SUCCESS] Extracted {len(matches)} matches\n")
         return matches
 
     def _extract_betika_matches(self, soup: BeautifulSoup) -> List[Dict]:
         """Extract match details from Betika page"""
         matches = []
 
-        print("\n[DEBUG] Starting Betika match extraction...")
+        logger.info("\n[DEBUG] Starting Betika match extraction...")
 
-        # Similar approach to SportPesa but adapted for Betika's HTML
-        match_elements = (
-            soup.find_all('div', class_=re.compile(r'match|game|event', re.I)) or
-            soup.find_all('tr', class_=re.compile(r'match|game|event', re.I))
-        )
+        # Try multiple selectors for match containers
+        selectors = [
+            'div.jackpot-match',
+            'div.match-row',
+            'div[class*="match"]',
+            'tr[class*="match"]',
+            'div[class*="game"]',
+            'div[class*="event"]'
+        ]
 
-        print(f"[DEBUG] Found {len(match_elements)} potential match elements")
+        match_elements = []
+        for selector in selectors:
+            elements = soup.select(selector)
+            if elements:
+                logger.info(f"[DEBUG] Found {len(elements)} elements with selector: {selector}")
+                match_elements = elements
+                break
 
         if not match_elements:
-            print("[WARNING] No match elements found with current selectors")
-            print("[INFO] Betika likely uses dynamic JavaScript rendering")
-            print("[INFO] Returning sample data for testing...\n")
+            logger.warning("[WARNING] No match elements found with any selector")
+            logger.info("[INFO] Betika likely uses dynamic JavaScript rendering")
+            logger.info("[INFO] Returning sample data for testing...\n")
             return self._get_sample_betika_matches()
+
+        logger.info(f"[DEBUG] Processing {len(match_elements)} potential match elements")
 
         for idx, element in enumerate(match_elements[:20]):
             try:
-                # Extract team names
-                teams = element.find_all(class_=re.compile(r'team|opponent', re.I))
+                # Extract team names with multiple strategies
+                teams = []
+
+                # Strategy 1: Look for team-specific classes
+                team_elements = element.find_all(class_=re.compile(r'team|opponent', re.I))
+                if team_elements and len(team_elements) >= 2:
+                    teams = [t.get_text(strip=True) for t in team_elements[:2]]
+
+                # Strategy 2: Look for home/away containers
+                if not teams:
+                    home = element.find(class_=re.compile(r'home', re.I))
+                    away = element.find(class_=re.compile(r'away', re.I))
+                    if home and away:
+                        teams = [home.get_text(strip=True), away.get_text(strip=True)]
 
                 if len(teams) >= 2:
-                    home_team = teams[0].get_text(strip=True)
-                    away_team = teams[1].get_text(strip=True)
+                    home_team = teams[0]
+                    away_team = teams[1]
 
                     # Skip if team names are empty or invalid
                     if not home_team or not away_team or len(home_team) < 3 or len(away_team) < 3:
@@ -284,7 +539,7 @@ class JackpotFetcher:
                     comp_elem = element.find(class_=re.compile(r'league|competition', re.I))
                     competition = comp_elem.get_text(strip=True) if comp_elem else None
 
-                    print(f"[DEBUG] Extracted match {idx + 1}: {home_team} vs {away_team}")
+                    logger.info(f"[DEBUG] Extracted match {len(matches) + 1}: {home_team} vs {away_team}")
 
                     matches.append({
                         'match_number': len(matches) + 1,
@@ -294,15 +549,15 @@ class JackpotFetcher:
                         'competition': competition
                     })
             except Exception as e:
-                print(f"[DEBUG] Error extracting match {idx + 1}: {e}")
+                logger.debug(f"[DEBUG] Error extracting match {idx + 1}: {e}")
                 continue
 
         if not matches:
-            print("[WARNING] No valid matches extracted from page")
-            print("[INFO] Returning sample data for testing...\n")
+            logger.warning("[WARNING] No valid matches extracted from page")
+            logger.info("[INFO] Returning sample data for testing...\n")
             return self._get_sample_betika_matches()
 
-        print(f"[SUCCESS] Extracted {len(matches)} matches\n")
+        logger.info(f"[SUCCESS] Extracted {len(matches)} matches\n")
         return matches
 
     def _extract_prize_amount(self, soup: BeautifulSoup) -> Optional[str]:
@@ -310,25 +565,27 @@ class JackpotFetcher:
         try:
             # Look for elements containing prize/amount/jackpot
             prize_patterns = [
-                r'KSh?\s*[\d,]+',
-                r'Ksh\s*[\d,]+',
-                r'[\d,]+\s*Million',
-                r'Prize:?\s*[\d,]+'
+                r'KSh?\s*[\d,]+(?:\.\d+)?(?:\s*(?:Million|Billion|M|B))?',
+                r'Ksh\s*[\d,]+(?:\.\d+)?(?:\s*(?:Million|Billion|M|B))?',
+                r'[\d,]+(?:\.\d+)?\s*(?:Million|Billion)',
+                r'Prize:?\s*[\d,]+(?:\.\d+)?'
             ]
 
             text = soup.get_text()
             for pattern in prize_patterns:
                 match = re.search(pattern, text, re.I)
                 if match:
+                    logger.info(f"[DEBUG] Found prize amount: {match.group(0)}")
                     return match.group(0)
 
             return None
-        except:
+        except Exception as e:
+            logger.debug(f"[DEBUG] Error extracting prize amount: {e}")
             return None
 
     def _get_sample_sportpesa_matches(self) -> List[Dict]:
         """Return sample SportPesa Mega Jackpot data for testing"""
-        print("[INFO] Using sample SportPesa Mega Jackpot data (17 matches)")
+        logger.info("[INFO] Using sample SportPesa Mega Jackpot data (17 matches)")
         return [
             {'match_number': 1, 'home_team': 'Arsenal', 'away_team': 'Chelsea', 'competition': 'Premier League', 'kickoff': 'Sat 15:00'},
             {'match_number': 2, 'home_team': 'Man City', 'away_team': 'Liverpool', 'competition': 'Premier League', 'kickoff': 'Sat 17:30'},
@@ -351,7 +608,7 @@ class JackpotFetcher:
 
     def _get_sample_betika_matches(self) -> List[Dict]:
         """Return sample Betika Jackpot data for testing"""
-        print("[INFO] Using sample Betika Jackpot data (15 matches)")
+        logger.info("[INFO] Using sample Betika Jackpot data (15 matches)")
         return [
             {'match_number': 1, 'home_team': 'Arsenal', 'away_team': 'Liverpool', 'competition': 'Premier League', 'kickoff': 'Sat 15:00'},
             {'match_number': 2, 'home_team': 'Man City', 'away_team': 'Chelsea', 'competition': 'Premier League', 'kickoff': 'Sat 17:30'},
@@ -385,13 +642,13 @@ class JackpotFetcher:
             with open(filepath, 'w') as f:
                 json.dump(jackpot_data, f, indent=2)
 
-            print(f"📝 Saved jackpot history to: {filepath}")
+            logger.info(f"📝 Saved jackpot history to: {filepath}")
 
             # Also append to master CSV for easy analysis
             self._append_to_master_csv(jackpot_data)
 
         except Exception as e:
-            print(f"Warning: Could not save jackpot history: {e}")
+            logger.warning(f"Warning: Could not save jackpot history: {e}")
 
     def _append_to_master_csv(self, jackpot_data: Dict):
         """Append jackpot summary to master CSV"""
@@ -403,9 +660,10 @@ class JackpotFetcher:
                 'timestamp': jackpot_data['fetched_at'],
                 'provider': jackpot_data['provider'],
                 'type': jackpot_data['type'],
-                'matches_count': jackpot_data['matches_count'],
+                'matches_count': jackpot_data.get('matches_count', len(jackpot_data['matches'])),
                 'prize_amount': jackpot_data.get('prize_amount', ''),
-                'url': jackpot_data['url']
+                'url': jackpot_data['url'],
+                'data_source': jackpot_data.get('data_source', 'unknown')
             }
 
             # Append to CSV
@@ -416,7 +674,7 @@ class JackpotFetcher:
                 df.to_csv(csv_path, mode='w', header=True, index=False)
 
         except Exception as e:
-            print(f"Warning: Could not append to master CSV: {e}")
+            logger.warning(f"Warning: Could not append to master CSV: {e}")
 
     def get_all_current_jackpots(self) -> List[Dict]:
         """Fetch all available jackpots"""
@@ -467,13 +725,13 @@ class JackpotFetcher:
             return df
 
         except Exception as e:
-            print(f"Error loading jackpot history: {e}")
+            logger.error(f"Error loading jackpot history: {e}")
             return pd.DataFrame()
 
 
 if __name__ == '__main__':
     # Test the fetcher
-    fetcher = JackpotFetcher()
+    fetcher = JackpotFetcher(use_selenium=True, headless=True)
 
     print("=" * 60)
     print("JACKPOT FETCHER TEST")
@@ -485,8 +743,9 @@ if __name__ == '__main__':
 
     for jp in jackpots:
         print(f"\n{jp['provider']} - {jp['type']}")
-        print(f"Matches: {jp['matches_count']}")
+        print(f"Matches: {jp.get('matches_count', len(jp['matches']))}")
         print(f"Prize: {jp.get('prize_amount', 'Unknown')}")
+        print(f"Data Source: {jp.get('data_source', 'unknown')}")
         print(f"First 3 matches:")
         for match in jp['matches'][:3]:
             print(f"  {match['match_number']}. {match['home_team']} vs {match['away_team']}")

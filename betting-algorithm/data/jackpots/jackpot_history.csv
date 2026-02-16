@@ -17,3 +17,21 @@ timestamp,provider,type,matches_count,prize_amount,url
 2026-02-11T20:08:15.185687,SportPesa,Mega Jackpot,17,,https://www.ke.sportpesa.com/en/mega-jackpot-pro
 2026-02-11T20:08:16.828887,SportPesa,Midweek Jackpot,13,,https://www.ke.sportpesa.com/en/jackpot
 2026-02-11T20:08:17.404519,Betika,Jackpot,15,,https://www.betika.com/en-ke/jackpot
+2026-02-15T19:07:28.798817,SportPesa,Mega Jackpot,17,,https://www.ke.sportpesa.com/en/mega-jackpot-pro
+2026-02-15T19:07:30.648376,SportPesa,Midweek Jackpot,13,,https://www.ke.sportpesa.com/en/jackpot
+2026-02-15T19:07:31.484368,Betika,Jackpot,15,,https://www.betika.com/en-ke/jackpot
+2026-02-16T05:15:31.959574,SportPesa,Mega Jackpot,17,,https://www.ke.sportpesa.com/en/mega-jackpot-pro,sample
+2026-02-16T05:15:39.531043,SportPesa,Midweek Jackpot,13,,https://www.ke.sportpesa.com/en/jackpot,sample
+2026-02-16T05:15:45.271100,Betika,Jackpot,15,,https://www.betika.com/en-ke/jackpot,sample
+2026-02-16T05:23:23.136690,SportPesa,Mega Jackpot,17,,https://www.ke.sportpesa.com/en/mega-jackpot-pro,sample
+2026-02-16T05:18:42.627304,SportPesa,Midweek Jackpot,13,,https://www.ke.sportpesa.com/en/jackpot,sample
+2026-02-16T05:18:48.736363,Betika,Jackpot,15,,https://www.betika.com/en-ke/jackpot,sample
+2026-02-16T05:46:29.585990,SportPesa,Mega Jackpot,17,"KSH
+                                    116,478,633
+                                                            
+M",https://www.ke.sportpesa.com/en/mega-jackpot-pro,selenium
+2026-02-16T05:46:43.199605,SportPesa,Midweek Jackpot,13,"KSH
+                                    116,478,633
+                                                            
+M",https://www.ke.sportpesa.com/en/jackpot,selenium
+2026-02-16T05:46:52.277024,Betika,Jackpot,15,,https://www.betika.com/en-ke/jackpot,selenium
