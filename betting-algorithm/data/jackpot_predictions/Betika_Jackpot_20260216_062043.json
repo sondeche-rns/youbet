@@ -1,0 +1,231 @@
+{
+  "jackpot_id": "Betika_Jackpot_20260216_062043",
+  "provider": "Betika",
+  "type": "Jackpot",
+  "prize_amount": null,
+  "total_matches": 15,
+  "analyzed_at": "2026-02-16T06:20:43.987892",
+  "predictions": [
+    {
+      "match_number": 1,
+      "home_team": "Arsenal",
+      "away_team": "Liverpool",
+      "prediction": "Home",
+      "confidence": 0.7176,
+      "home_prob": 0.5182,
+      "draw_prob": 0.2383,
+      "away_prob": 0.2436,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 2,
+      "home_team": "Man City",
+      "away_team": "Chelsea",
+      "prediction": "Home",
+      "confidence": 0.7233,
+      "home_prob": 0.5154,
+      "draw_prob": 0.2368,
+      "away_prob": 0.2478,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 3,
+      "home_team": "Real Madrid",
+      "away_team": "Atletico Madrid",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 4,
+      "home_team": "Barcelona",
+      "away_team": "Sevilla",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 5,
+      "home_team": "Bayern Munich",
+      "away_team": "RB Leipzig",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 6,
+      "home_team": "Inter Milan",
+      "away_team": "Juventus",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 7,
+      "home_team": "PSG",
+      "away_team": "Lyon",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 8,
+      "home_team": "Tottenham",
+      "away_team": "Newcastle",
+      "prediction": "Home",
+      "confidence": 0.6078,
+      "home_prob": 0.354,
+      "draw_prob": 0.2979,
+      "away_prob": 0.348,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 9,
+      "home_team": "Man United",
+      "away_team": "West Ham",
+      "prediction": "Home",
+      "confidence": 0.7254,
+      "home_prob": 0.5736,
+      "draw_prob": 0.2399,
+      "away_prob": 0.1865,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 10,
+      "home_team": "Napoli",
+      "away_team": "Roma",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 11,
+      "home_team": "Dortmund",
+      "away_team": "Leverkusen",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 12,
+      "home_team": "Ajax",
+      "away_team": "PSV",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 13,
+      "home_team": "Benfica",
+      "away_team": "Porto",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 14,
+      "home_team": "Celtic",
+      "away_team": "Rangers",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 15,
+      "home_team": "Sporting CP",
+      "away_team": "Braga",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    }
+  ],
+  "high_confidence_count": 0,
+  "low_confidence_count": 0,
+  "high_confidence_picks": [],
+  "low_confidence_picks": [],
+  "average_confidence": 0.6646133333333333,
+  "recommended_combinations": [
+    {
+      "strategy": "Main Prediction",
+      "description": "All matches with highest probability outcome",
+      "picks": [
+        "1: Home",
+        "2: Home",
+        "3: Home",
+        "4: Home",
+        "5: Home",
+        "6: Home",
+        "7: Home",
+        "8: Home",
+        "9: Home",
+        "10: Home",
+        "11: Home",
+        "12: Home",
+        "13: Home",
+        "14: Home",
+        "15: Home"
+      ],
+      "predicted_accuracy": 0.3869733333333334
+    },
+    {
+      "strategy": "Conservative",
+      "description": "3 high confidence picks, others doubled",
+      "high_confidence_picks": [
+        "1: Home",
+        "2: Home",
+        "9: Home"
+      ],
+      "predicted_accuracy": 0.5357333333333333
+    },
+    {
+      "strategy": "Draw Value",
+      "description": "11 matches with draw probability >30%",
+      "draw_candidates": [
+        "3: Real Madrid vs Atletico Madrid (30.3%)",
+        "4: Barcelona vs Sevilla (30.3%)",
+        "5: Bayern Munich vs RB Leipzig (30.3%)",
+        "6: Inter Milan vs Juventus (30.3%)",
+        "7: PSG vs Lyon (30.3%)",
+        "10: Napoli vs Roma (30.3%)",
+        "11: Dortmund vs Leverkusen (30.3%)",
+        "12: Ajax vs PSV (30.3%)",
+        "13: Benfica vs Porto (30.3%)",
+        "14: Celtic vs Rangers (30.3%)",
+        "15: Sporting CP vs Braga (30.3%)"
+      ]
+    }
+  ]
+}

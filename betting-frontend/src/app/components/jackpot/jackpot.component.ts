@@ -12,6 +12,7 @@ interface JackpotData {
   url: string;
   matches: JackpotMatch[];
   is_sample_data?: boolean;
+  data_source?: string; // 'selenium', 'sample', 'sample_fallback'
 }
 
 interface JackpotMatch {
@@ -149,12 +150,29 @@ interface PerformanceStats {
 
           <!-- Fetched Jackpots -->
           @if (fetchedJackpots.length > 0) {
+            <!-- Info about fetching method -->
+            @if (usedEnhancedFetcher) {
+              <div class="info-banner mb-3">
+                <span class="info-icon">🎰</span>
+                <div class="info-content">
+                  <strong>Carousel Navigation Active</strong>
+                  <p>Automatically discovered {{ fetchedJackpots.length }} jackpot(s) from SportPesa carousel</p>
+                </div>
+              </div>
+            }
+
             <div class="jackpots-grid mt-3">
               @for (jp of fetchedJackpots; track jp.provider + jp.type) {
-                <div class="card jackpot-card" (click)="selectJackpot(jp)" [class.sample-data]="jp.is_sample_data">
-                  @if (jp.is_sample_data) {
-                    <div class="sample-badge">Test Data</div>
-                  }
+                <div class="card jackpot-card" (click)="selectJackpot(jp)" [class.sample-data]="jp.is_sample_data" [class.live-data]="!jp.is_sample_data">
+                  <!-- Badges -->
+                  <div class="card-badges">
+                    @if (jp.is_sample_data) {
+                      <div class="sample-badge">Sample Data</div>
+                    } @else if (jp.data_source === 'selenium') {
+                      <div class="live-badge">Live Data</div>
+                    }
+                  </div>
+
                   <div class="jackpot-header">
                     <div>
                       <h4 class="jackpot-provider">{{ jp.provider }}</h4>
@@ -174,6 +192,21 @@ interface PerformanceStats {
                       <span class="stat-label">Fetched</span>
                     </div>
                   </div>
+
+                  <!-- Data Source Indicator -->
+                  @if (jp.data_source) {
+                    <div class="data-source-indicator">
+                      <span class="source-icon">
+                        @if (jp.data_source === 'selenium') {
+                          🌐
+                        } @else {
+                          📝
+                        }
+                      </span>
+                      <span class="source-text">{{ getDataSourceLabel(jp.data_source) }}</span>
+                    </div>
+                  }
+
                   @if (selectedJackpot === jp) {
                     <button class="btn btn-sm btn-success mt-2" (click)="analyzeJackpot(jp); $event.stopPropagation()">
                       🤖 Analyze This
@@ -477,12 +510,28 @@ interface PerformanceStats {
       font-weight: 600;
     }
 
-    .sample-badge {
+    .card-badges {
       position: absolute;
       top: 0.5rem;
       right: 0.5rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .sample-badge {
       background: #fbbf24;
       color: #78350f;
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .live-badge {
+      background: #10b981;
+      color: white;
       padding: 0.25rem 0.5rem;
       border-radius: var(--radius-sm);
       font-size: 0.7rem;
@@ -497,6 +546,61 @@ interface PerformanceStats {
       &.sample-data {
         border-color: #fbbf24;
         background: linear-gradient(to bottom, rgba(251, 191, 36, 0.05), transparent);
+      }
+
+      &.live-data {
+        border-color: #10b981;
+        background: linear-gradient(to bottom, rgba(16, 185, 129, 0.05), transparent);
+      }
+    }
+
+    .data-source-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+
+      .source-icon {
+        font-size: 1rem;
+      }
+
+      .source-text {
+        font-weight: 500;
+      }
+    }
+
+    .info-banner {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: var(--radius);
+      padding: 1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+
+      .info-icon {
+        font-size: 1.5rem;
+      }
+
+      .info-content {
+        flex: 1;
+
+        strong {
+          display: block;
+          color: var(--text);
+          margin-bottom: 0.25rem;
+          font-size: 0.95rem;
+        }
+
+        p {
+          margin: 0;
+          color: var(--text-muted);
+          font-size: 0.85rem;
+        }
       }
     }
 
@@ -873,6 +977,7 @@ export class JackpotComponent implements OnInit {
   performanceStats: PerformanceStats | null = null;
   fetchWarnings: string[] = [];
   usingTestData = false;
+  usedEnhancedFetcher = false;
 
   constructor(private api: ApiService) {}
 
@@ -884,6 +989,7 @@ export class JackpotComponent implements OnInit {
     this.fetching = true;
     this.fetchWarnings = [];
     this.usingTestData = false;
+    this.usedEnhancedFetcher = false;
     const selectedProviders: string[] = [];
 
     if (this.providers.sportpesa) selectedProviders.push('sportpesa');
@@ -892,15 +998,17 @@ export class JackpotComponent implements OnInit {
     try {
       const response: any = await this.api.fetchJackpots(selectedProviders).toPromise();
       this.fetchedJackpots = response.jackpots || [];
+      this.usedEnhancedFetcher = response.enhanced_used || false;
 
       // Check for warnings
       if (response.warnings && response.warnings.length > 0) {
         this.fetchWarnings = response.warnings;
-        this.usingTestData = true;
-        console.warn('Using sample data:', response.warnings);
+        this.usingTestData = response.warnings.some((w: string) => w.toLowerCase().includes('sample'));
+        console.warn('Fetch warnings:', response.warnings);
       }
 
       console.log('Fetched jackpots:', this.fetchedJackpots);
+      console.log('Enhanced fetcher used:', this.usedEnhancedFetcher);
       console.log('Warnings:', this.fetchWarnings);
     } catch (error) {
       console.error('Error fetching jackpots:', error);
@@ -908,6 +1016,15 @@ export class JackpotComponent implements OnInit {
     } finally {
       this.fetching = false;
     }
+  }
+
+  getDataSourceLabel(dataSource: string): string {
+    const labels: { [key: string]: string } = {
+      'selenium': 'Live from Carousel',
+      'sample': 'Sample Data',
+      'sample_fallback': 'Fallback Data'
+    };
+    return labels[dataSource] || dataSource;
   }
 
   selectJackpot(jp: JackpotData) {

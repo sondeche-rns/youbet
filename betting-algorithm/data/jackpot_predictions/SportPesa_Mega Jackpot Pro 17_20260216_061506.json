@@ -1,0 +1,255 @@
+{
+  "jackpot_id": "SportPesa_Mega Jackpot Pro 17_20260216_061506",
+  "provider": "SportPesa",
+  "type": "Mega Jackpot Pro 17",
+  "prize_amount": "KSH 116,478,633",
+  "total_matches": 17,
+  "analyzed_at": "2026-02-16T06:15:06.016218",
+  "predictions": [
+    {
+      "match_number": 1,
+      "home_team": "Arsenal",
+      "away_team": "Chelsea",
+      "prediction": "Home",
+      "confidence": 0.7216,
+      "home_prob": 0.516,
+      "draw_prob": 0.2387,
+      "away_prob": 0.2452,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 2,
+      "home_team": "Man City",
+      "away_team": "Liverpool",
+      "prediction": "Home",
+      "confidence": 0.7233,
+      "home_prob": 0.5177,
+      "draw_prob": 0.2363,
+      "away_prob": 0.246,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 3,
+      "home_team": "Tottenham",
+      "away_team": "Man United",
+      "prediction": "Away",
+      "confidence": 0.6029,
+      "home_prob": 0.316,
+      "draw_prob": 0.2902,
+      "away_prob": 0.3938,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 4,
+      "home_team": "Real Madrid",
+      "away_team": "Barcelona",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 5,
+      "home_team": "Bayern Munich",
+      "away_team": "Dortmund",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 6,
+      "home_team": "Inter Milan",
+      "away_team": "AC Milan",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 7,
+      "home_team": "PSG",
+      "away_team": "Marseille",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 8,
+      "home_team": "Juventus",
+      "away_team": "Napoli",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 9,
+      "home_team": "Atletico Madrid",
+      "away_team": "Sevilla",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 10,
+      "home_team": "Leicester",
+      "away_team": "West Ham",
+      "prediction": "Home",
+      "confidence": 0.6867,
+      "home_prob": 0.442,
+      "draw_prob": 0.3027,
+      "away_prob": 0.2553,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 11,
+      "home_team": "Newcastle",
+      "away_team": "Aston Villa",
+      "prediction": "Away",
+      "confidence": 0.6297,
+      "home_prob": 0.3559,
+      "draw_prob": 0.2868,
+      "away_prob": 0.3573,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 12,
+      "home_team": "Brighton",
+      "away_team": "Wolves",
+      "prediction": "Home",
+      "confidence": 0.7229,
+      "home_prob": 0.5546,
+      "draw_prob": 0.2641,
+      "away_prob": 0.1813,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 13,
+      "home_team": "Everton",
+      "away_team": "Southampton",
+      "prediction": "Home",
+      "confidence": 0.6619,
+      "home_prob": 0.4024,
+      "draw_prob": 0.2907,
+      "away_prob": 0.3069,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 14,
+      "home_team": "Leeds United",
+      "away_team": "Burnley",
+      "prediction": "Home",
+      "confidence": 0.7034,
+      "home_prob": 0.481,
+      "draw_prob": 0.2952,
+      "away_prob": 0.2237,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 15,
+      "home_team": "Sheffield United",
+      "away_team": "Norwich",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 16,
+      "home_team": "Brentford",
+      "away_team": "Fulham",
+      "prediction": "Home",
+      "confidence": 0.7027,
+      "home_prob": 0.4682,
+      "draw_prob": 0.2725,
+      "away_prob": 0.2593,
+      "recommendation": "No Bet"
+    },
+    {
+      "match_number": 17,
+      "home_team": "Crystal Palace",
+      "away_team": "Bournemouth",
+      "prediction": "Home",
+      "confidence": 0.6384,
+      "home_prob": 0.3622,
+      "draw_prob": 0.3141,
+      "away_prob": 0.3237,
+      "recommendation": "No Bet"
+    }
+  ],
+  "high_confidence_count": 0,
+  "low_confidence_count": 0,
+  "high_confidence_picks": [],
+  "low_confidence_picks": [],
+  "average_confidence": 0.6689529411764705,
+  "recommended_combinations": [
+    {
+      "strategy": "Main Prediction",
+      "description": "All matches with highest probability outcome",
+      "picks": [
+        "1: Home",
+        "2: Home",
+        "3: Away",
+        "4: Home",
+        "5: Home",
+        "6: Home",
+        "7: Home",
+        "8: Home",
+        "9: Home",
+        "10: Home",
+        "11: Away",
+        "12: Home",
+        "13: Home",
+        "14: Home",
+        "15: Home",
+        "16: Home",
+        "17: Home"
+      ],
+      "predicted_accuracy": 0.40829411764705886
+    },
+    {
+      "strategy": "Conservative",
+      "description": "5 high confidence picks, others doubled",
+      "high_confidence_picks": [
+        "1: Home",
+        "2: Home",
+        "12: Home",
+        "14: Home",
+        "16: Home"
+      ],
+      "predicted_accuracy": 0.5075000000000001
+    },
+    {
+      "strategy": "Draw Value",
+      "description": "9 matches with draw probability >30%",
+      "draw_candidates": [
+        "4: Real Madrid vs Barcelona (30.3%)",
+        "5: Bayern Munich vs Dortmund (30.3%)",
+        "6: Inter Milan vs AC Milan (30.3%)",
+        "7: PSG vs Marseille (30.3%)",
+        "8: Juventus vs Napoli (30.3%)",
+        "9: Atletico Madrid vs Sevilla (30.3%)",
+        "10: Leicester vs West Ham (30.3%)",
+        "15: Sheffield United vs Norwich (30.3%)",
+        "17: Crystal Palace vs Bournemouth (31.4%)"
+      ]
+    }
+  ]
+}

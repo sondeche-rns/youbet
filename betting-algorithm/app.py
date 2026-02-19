@@ -692,14 +692,21 @@ def internal_error(e):
 
 @app.route('/api/jackpots/fetch', methods=['POST'])
 def fetch_jackpots():
-    """Fetch all current jackpots from betting sites"""
+    """Fetch all current jackpots from betting sites using enhanced carousel navigation"""
     try:
+        # Import both regular and enhanced fetchers
         from src.jackpot_fetcher import JackpotFetcher
+        try:
+            from src.jackpot_fetcher_enhanced import EnhancedJackpotFetcher
+            enhanced_available = True
+        except ImportError:
+            enhanced_available = False
+            print("Enhanced fetcher not available, using standard fetcher")
 
         data = request.json or {}
         providers = data.get('providers', ['sportpesa', 'betika'])
+        use_enhanced = data.get('use_enhanced', True)  # Default to enhanced for SportPesa
 
-        fetcher = JackpotFetcher()
         jackpots = []
         warnings = []
 
@@ -707,42 +714,76 @@ def fetch_jackpots():
             provider_lower = provider.lower()
 
             if provider_lower == 'sportpesa':
-                # Fetch both mega and midweek
-                mega = fetcher.fetch_sportpesa_mega_jackpot()
-                if mega:
-                    # Check if using sample data
-                    if mega.get('matches') and len(mega['matches']) > 0:
-                        if mega['matches'][0].get('home_team') in ['Arsenal', 'Man City']:
-                            mega['is_sample_data'] = True
-                            warnings.append(f"SportPesa Mega: Using sample data (website uses JavaScript rendering)")
-                    jackpots.append(mega)
+                # Use enhanced fetcher for SportPesa carousel if available
+                if enhanced_available and use_enhanced:
+                    try:
+                        print("🎰 Using Enhanced Fetcher for SportPesa (Carousel Navigation)")
+                        enhanced_fetcher = EnhancedJackpotFetcher(use_selenium=True, headless=True)
+                        sportpesa_jackpots = enhanced_fetcher.fetch_all_sportpesa_jackpots()
 
-                midweek = fetcher.fetch_sportpesa_midweek_jackpot()
-                if midweek:
-                    if midweek.get('matches') and len(midweek['matches']) > 0:
-                        if midweek['matches'][0].get('home_team') in ['Arsenal', 'Man City']:
-                            midweek['is_sample_data'] = True
-                            warnings.append(f"SportPesa Midweek: Using sample data (website uses JavaScript rendering)")
-                    jackpots.append(midweek)
+                        # Add each jackpot from carousel
+                        for jp in sportpesa_jackpots:
+                            # Check if using sample/fallback data
+                            if jp.get('data_source') in ['sample', 'sample_fallback']:
+                                jp['is_sample_data'] = True
+                                warnings.append(f"{jp['type']}: Using sample data (data_source: {jp.get('data_source')})")
+                            else:
+                                jp['is_sample_data'] = False
+
+                            jackpots.append(jp)
+
+                        print(f"✅ Enhanced fetcher found {len(sportpesa_jackpots)} SportPesa jackpot(s)")
+
+                    except Exception as e:
+                        print(f"⚠️ Enhanced fetcher failed: {e}, falling back to standard fetcher")
+                        warnings.append(f"Enhanced carousel navigation failed, using standard fetcher")
+                        # Fall back to standard fetcher
+                        use_enhanced = False
+
+                # Fall back to standard fetcher if enhanced not available or failed
+                if not enhanced_available or not use_enhanced:
+                    print("📡 Using Standard Fetcher for SportPesa")
+                    fetcher = JackpotFetcher()
+
+                    # Fetch both mega and midweek separately
+                    mega = fetcher.fetch_sportpesa_mega_jackpot()
+                    if mega:
+                        if mega.get('matches') and len(mega['matches']) > 0:
+                            if mega['matches'][0].get('home_team') in ['Arsenal', 'Man City']:
+                                mega['is_sample_data'] = True
+                                warnings.append(f"SportPesa Mega: Using sample data")
+                        jackpots.append(mega)
+
+                    midweek = fetcher.fetch_sportpesa_midweek_jackpot()
+                    if midweek:
+                        if midweek.get('matches') and len(midweek['matches']) > 0:
+                            if midweek['matches'][0].get('home_team') in ['Arsenal', 'Man City']:
+                                midweek['is_sample_data'] = True
+                                warnings.append(f"SportPesa Midweek: Using sample data")
+                        jackpots.append(midweek)
 
             elif provider_lower == 'betika':
+                # Betika doesn't use carousel, use standard fetcher
+                fetcher = JackpotFetcher()
                 betika_jp = fetcher.fetch_betika_jackpot()
                 if betika_jp:
                     if betika_jp.get('matches') and len(betika_jp['matches']) > 0:
                         if betika_jp['matches'][0].get('home_team') in ['Arsenal', 'Man City']:
                             betika_jp['is_sample_data'] = True
-                            warnings.append(f"Betika: Using sample data (website uses JavaScript rendering)")
+                            warnings.append(f"Betika: Using sample data")
                     jackpots.append(betika_jp)
 
         response = {
             'success': True,
             'jackpots': jackpots,
-            'count': len(jackpots)
+            'count': len(jackpots),
+            'enhanced_used': enhanced_available and use_enhanced
         }
 
         if warnings:
             response['warnings'] = warnings
-            response['note'] = 'Some jackpots are using sample data because betting sites use JavaScript rendering. Consider using Selenium for real data extraction.'
+            if any('sample data' in w for w in warnings):
+                response['note'] = 'Some jackpots are using sample data. Run ./fix_selenium.sh to enable live data scraping.'
 
         return jsonify(response)
 
