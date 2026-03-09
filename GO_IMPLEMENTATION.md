@@ -144,7 +144,7 @@ type PredictionResponse struct {
 ## Phased Migration Plan
 
 ### Phase 1: Foundation (domain + utilities) ✅ COMPLETED
-**Files to create**: `internal/domain/`, `internal/util/`, `internal/storage/`
+**Files created**: `internal/domain/`, `internal/util/`, `internal/storage/`
 
 1. Port `models.py` → `internal/domain/models.go` + `enums.go`
    - `FactorResult`, `MatchContext`, `H2HRecord`, `ManagerInfo` as Go structs
@@ -168,8 +168,8 @@ type PredictionResponse struct {
 
 **Tests**: Unit tests for all math functions, model validation, team normalization.
 
-### Phase 2: Core Algorithm
-**Files to create**: `internal/algorithm/`, `internal/context/`
+### Phase 2: Core Algorithm ✅ COMPLETED
+**Files created**: `internal/algorithm/`, `internal/context/`
 
 1. Port `algorithm.py` → `internal/algorithm/algorithm.go` + `factors.go` + `poisson.go`
    - `PredictionEngine` struct holding weights, config, calibration state
@@ -188,33 +188,39 @@ type PredictionResponse struct {
 
 **Tests**: Port `test_algorithm.py`, `test_integration_v2.py`, `test_contextual_factors.py`. Validate probability outputs match Python to 4 decimal places.
 
-### Phase 3: Data Pipeline
-**Files to create**: `internal/data/`
+### Phase 3: Data Pipeline ✅ COMPLETED
+**Files created**: `internal/data/`
+**Reference**: `PHASE3_IMPLEMENTATION.md`
 
 1. Port `data_collector.py` → `internal/data/collector.go`
    - Replace pandas DataFrame with `[]MatchRecord` typed slice
-   - 7-step pipeline as sequential functions (fetch → enrich → compute)
+   - 7-step synchronous pipeline (fetch → xG → Elo → form → rest → advanced stats → positions)
    - Progress callbacks via `func(step string, current, total int)`
-   - Run in goroutine with channel-based progress reporting
+   - Sample data fallback (380 Poisson-sampled matches) when HTTP fails
 
 2. Port `data_sources_manager.py` → `internal/data/sources.go`
    - Load `config/data_sources.json` into typed structs
+   - `FormatURL`, `GetAvailableLeagues`, `GetAvailableSeasons`, etc.
 
 3. Port `live_fixtures_fetcher.py` → `internal/data/fixtures.go`
-   - HTTP client calls to The Odds API
-   - Struct-based response parsing
+   - HTTP client calls to The Odds API (`GetUpcomingMatches`, `GetLiveOddsForMatch`)
+   - football-data.co.uk current-season fetch (`GetCurrentSeasonResults`)
 
-### Phase 4: Jackpot System
-**Files to create**: `internal/jackpot/`
+### Phase 4: Jackpot System ✅ COMPLETED
+**Files created**: `internal/jackpot/`
+**Reference**: `PHASE4_IMPLEMENTATION.md`
 
 1. Port `jackpot_fetcher.py` → `internal/jackpot/fetcher.go`
-   - `goquery` for HTML parsing (replaces BeautifulSoup)
-   - SportPesa + Betika scraping with sample data fallback
+   - `regexp` on raw HTML (replaces BeautifulSoup CSS selectors — same fallback result)
+   - SportPesa Mega (17), Midweek (13) + Betika (15) with curated sample data fallback
+   - Saves timestamped JSON + master `jackpot_history.csv`
 
 2. Port `jackpot_analyzer.py` → `internal/jackpot/analyzer.go`
-   - Batch prediction using `PredictionEngine`
-   - Combination generation (main, conservative, draw-value, banker)
-   - Result recording + performance tracking
+   - Batch prediction using `PredictionEngine.Predict()`
+   - `domain.LookupTeam()` for match enrichment
+   - Combination generation (Main, Conservative >70%, Draw Value >30%)
+   - Result recording + `PerformanceStats` aggregation
+   - Saves `{id}.json`, `{id}.csv`, `{id}_results.json`, `jackpot_results_summary.csv`
 
 ### Phase 5: HTTP API + Backtest
 **Files to create**: `internal/api/`, `internal/backtest/`, `cmd/server/`

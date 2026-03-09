@@ -1,14 +1,20 @@
 # Phase 4 Implementation Reference — Jackpot System
 
+> **Status:** Complete
+> **Branch:** `feature/golang-refactor`
+> **Packages created:** `internal/jackpot`
+> **Python source files ported:** `jackpot_fetcher.py` · `jackpot_analyzer.py`
+
 ## Overview
 
 Phase 4 ports the Python jackpot subsystem to Go, creating the
-`internal/jackpot/` package. Two files are created:
+`internal/jackpot/` package. Three files are created:
 
 | File | Source | Purpose |
 |------|--------|---------|
 | `fetcher.go` | `jackpot_fetcher.py` | Scrape SportPesa / Betika; sample-data fallback |
 | `analyzer.go` | `jackpot_analyzer.py` | Batch predictions + combination strategies + result tracking |
+| `analyzer_test.go` | — | 35 unit + integration tests |
 
 No new external dependencies are added; the package uses only Go stdlib and
 internal packages (`internal/algorithm`, `internal/domain`).
@@ -100,19 +106,16 @@ type JackpotData struct {
     FetchedAt    string         `json:"fetched_at"`    // RFC3339
     URL          string         `json:"url"`
     Matches      []JackpotMatch `json:"matches"`
-    DataSource   string         `json:"data_source"`   // "http" | "sample"
     PrizeAmount  string         `json:"prize_amount,omitempty"`
-    Error        string         `json:"error,omitempty"`
 }
 
-type HistoryRow struct {
+type JackpotHistoryRow struct {
     Timestamp    string
     Provider     string
     Type         string
     MatchesCount int
     PrizeAmount  string
     URL          string
-    DataSource   string
 }
 ```
 
@@ -120,42 +123,43 @@ type HistoryRow struct {
 
 ```go
 type JackpotFetcher struct {
-    httpClient *http.Client     // 30 s timeout
-    dataDir    string           // default: "./data/jackpots"
-    userAgent  string           // Chrome 120 UA string
+    httpClient *http.Client   // 15 s timeout
+    historyDir string         // dataDir/jackpots/
+    logger     *slog.Logger
 }
 ```
 
 **Constructor**:
 
 ```go
-func NewJackpotFetcher(dataDir string) *JackpotFetcher
+func NewJackpotFetcher(dataDir string, httpClient *http.Client, logger *slog.Logger) *JackpotFetcher
+// historyDir = dataDir/jackpots/
+// httpClient defaults to &http.Client{Timeout: 15s}
+// logger defaults to slog.Default()
 ```
-
-If `dataDir` is empty, defaults to `"./data/jackpots"`.
 
 **Public methods**:
 
-| Method | Description |
-|--------|-------------|
-| `FetchSportpesaMegaJackpot() *JackpotData` | Fetches SportPesa Mega (17 matches) |
-| `FetchSportpesaMidweekJackpot() *JackpotData` | Fetches SportPesa Midweek (13 matches) |
-| `FetchBetikaJackpot() *JackpotData` | Fetches Betika Jackpot (15 matches) |
-| `GetAllCurrentJackpots() []*JackpotData` | Fetches all three; returns non-nil results |
-| `GetJackpotHistory(provider, jackpotType string) ([]HistoryRow, error)` | Reads `jackpot_history.csv` with optional filters |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `FetchSportPesaMegaJackpot()` | `(*JackpotData, error)` | 17-match Mega Jackpot; sample fallback |
+| `FetchSportPesaMidweekJackpot()` | `(*JackpotData, error)` | 13-match Midweek Jackpot; sample fallback |
+| `FetchBetikaJackpot()` | `(*JackpotData, error)` | 15-match Betika Jackpot; sample fallback |
+| `GetAllCurrentJackpots()` | `[]*JackpotData` | Fetches all three; individual errors logged and skipped |
+| `GetJackpotHistory(provider, jackpotType string)` | `([]JackpotHistoryRow, error)` | Reads `jackpot_history.csv`; empty string = no filter |
 
 **Internal methods / functions**:
 
 | Symbol | Description |
 |--------|-------------|
-| `fetchPage(url) (string, error)` | GET request with UA header; returns body string |
-| `extractMatchesFromHTML(html) []JackpotMatch` | Regex scan for team-name pairs in HTML |
-| `extractPrizeAmount(html) string` | Regex scan for KSh/prize amounts |
-| `saveHistory(*JackpotData)` | Writes timestamped JSON + appends CSV row |
-| `appendToMasterCSV(*JackpotData)` | Appends one row to `jackpot_history.csv` |
-| `buildCSVIndex([]string) map[string]int` | Maps header names → column indices |
-| `csvCol(row, idx, name) string` | Safe CSV column accessor |
-| `sampleSportpesaMatches() []JackpotMatch` | 17 curated Premier League / European matches |
+| `fetchPage(url) ([]byte, error)` | GET request with Chrome UA header; returns raw body |
+| `extractMatches(body, provider) []JackpotMatch` | Regex scan for team-name pairs in HTML; usually returns empty (JS-rendered) |
+| `extractPrizeAmount(body) string` | Regex scan for KSh/prize amounts |
+| `saveJackpotHistory(*JackpotData) error` | Writes timestamped JSON + appends CSV row |
+| `appendToMasterCSV(*JackpotData) error` | Appends one row to `jackpot_history.csv` |
+| `safeGet(row, idx, col) string` | Safe CSV column accessor |
+| `sampleSportPesaMatches() []JackpotMatch` | 17 curated Premier League / European matches |
+| `sampleSportPesaMidweekMatches() []JackpotMatch` | 13 curated midweek fixtures |
 | `sampleBetikaMatches() []JackpotMatch` | 15 curated matches |
 
 ---
@@ -182,13 +186,13 @@ type MatchPrediction struct {
     Error          string  `json:"error,omitempty"`
 }
 
-type Combination struct {
+type BettingCombination struct {
     Strategy            string   `json:"strategy"`
     Description         string   `json:"description"`
-    Picks               []string `json:"picks,omitempty"`               // Main strategy
+    Picks               []string `json:"picks,omitempty"`                // Main strategy
     PredictedAccuracy   float64  `json:"predicted_accuracy,omitempty"`
     HighConfidencePicks []string `json:"high_confidence_picks,omitempty"` // Conservative strategy
-    DrawCandidates      []string `json:"draw_candidates,omitempty"`        // Draw-value strategy
+    DrawCandidates      []string `json:"draw_candidates,omitempty"`       // Draw-value strategy
 }
 
 type JackpotAnalysis struct {
@@ -204,7 +208,7 @@ type JackpotAnalysis struct {
     HighConfidencePicks     []MatchPrediction `json:"high_confidence_picks"`
     LowConfidencePicks      []MatchPrediction `json:"low_confidence_picks"`
     AverageConfidence       float64           `json:"average_confidence"`
-    RecommendedCombinations []Combination     `json:"recommended_combinations"`
+    RecommendedCombinations []BettingCombination `json:"recommended_combinations"`
 }
 
 type JackpotResult struct {
@@ -218,9 +222,22 @@ type JackpotResult struct {
     PredictionsWithResults []MatchPrediction `json:"predictions_with_results"`
 }
 
-type ResultInput struct {
+type ResultEntry struct {
     MatchNumber  int    `json:"match_number"`
     ActualResult string `json:"actual_result"` // "Home" | "Draw" | "Away"
+}
+
+type ProviderStats struct {
+    Count           int     `json:"count"`
+    AverageAccuracy float64 `json:"average_accuracy"`
+}
+
+type PerformanceStats struct {
+    TotalJackpots   int                      `json:"total_jackpots"`
+    AverageAccuracy float64                  `json:"average_accuracy"`
+    BestAccuracy    float64                  `json:"best_accuracy"`
+    WorstAccuracy   float64                  `json:"worst_accuracy"`
+    ByProvider      map[string]ProviderStats `json:"by_provider"`
 }
 ```
 
@@ -229,38 +246,42 @@ type ResultInput struct {
 ```go
 type JackpotAnalyzer struct {
     engine         *algorithm.PredictionEngine
-    predictionsDir string   // default: "./data/jackpot_predictions"
-    resultsDir     string   // default: "./data/jackpot_results"
+    predictionsDir string // dataDir/jackpot_predictions/
+    resultsDir     string // dataDir/jackpot_results/
+    logger         *slog.Logger
 }
 ```
 
 **Constructor**:
 
 ```go
-func NewJackpotAnalyzer(
-    engine         *algorithm.PredictionEngine,
-    predictionsDir string,
-    resultsDir     string,
-) *JackpotAnalyzer
+func NewJackpotAnalyzer(engine *algorithm.PredictionEngine, dataDir string, logger *slog.Logger) *JackpotAnalyzer
+// predictionsDir = dataDir/jackpot_predictions/
+// resultsDir     = dataDir/jackpot_results/
+// logger defaults to slog.Default()
 ```
 
 **Public methods**:
 
-| Method | Description |
-|--------|-------------|
-| `AnalyzeJackpot(*JackpotData) *JackpotAnalysis` | Predicts all matches; generates combinations; saves JSON + CSV |
-| `RecordJackpotResults(jackpotID string, results []ResultInput) (*JackpotResult, error)` | Loads analysis, scores actual results, saves results |
-| `GetPerformanceStats() ([]map[string]string, error)` | Reads `jackpot_results_summary.csv`; returns all rows |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `AnalyzeJackpot(data *JackpotData)` | `(*JackpotAnalysis, error)` | Predicts all matches; generates combinations; saves JSON + CSV |
+| `RecordJackpotResults(id string, results []ResultEntry)` | `(*JackpotResult, error)` | Loads analysis, scores actual results, saves results JSON + CSV |
+| `GetPerformanceStats()` | `(*PerformanceStats, error)` | Aggregates `jackpot_results_summary.csv`; nil if no data |
 
 **Internal functions**:
 
 | Symbol | Description |
 |--------|-------------|
-| `predictMatch(JackpotMatch) MatchPrediction` | Calls engine.Predict; determines most likely outcome |
-| `enrichMatchData(JackpotMatch) *domain.MatchData` | Builds MatchData from LookupTeam results |
-| `generateCombinations([]MatchPrediction) []Combination` | Produces three strategies |
-| `savePredictions(*JackpotAnalysis)` | Writes JSON + CSV to predictionsDir |
-| `appendToResultsCSV(*JackpotResult)` | Appends summary row to jackpot_results_summary.csv |
+| `enrichMatchData(JackpotMatch) algorithm.MatchData` | Builds MatchData from `domain.LookupTeam` results |
+| `generateCombinations([]MatchPrediction) []BettingCombination` | Produces three strategies |
+| `savePredictions(*JackpotAnalysis) error` | Writes JSON + CSV to predictionsDir |
+| `savePredictionsCSV(*JackpotAnalysis) error` | Flat predictions CSV |
+| `appendToResultsCSV(*JackpotResult) error` | Appends summary row to jackpot_results_summary.csv |
+| `writeJSON(path string, v any) error` | MkdirAll + MarshalIndent + WriteFile |
+| `buildMatchPrediction(JackpotMatch, *PredictionResult) MatchPrediction` | Pure — converts engine output to MatchPrediction |
+| `averageConfidence([]MatchPrediction) float64` | Pure — mean confidence |
+| `max3(a, b, c float64) float64` | Pure — largest of three values |
 
 ---
 
@@ -402,7 +423,6 @@ data/
 | `matches_count` | Number of matches in this fetch |
 | `prize_amount` | Extracted prize string (may be empty) |
 | `url` | Source URL |
-| `data_source` | "http" or "sample" |
 
 ### jackpot_results_summary.csv columns
 
@@ -493,7 +513,7 @@ data/
 | 16 | Brentford | Fulham | Premier League |
 | 17 | Crystal Palace | Bournemouth | Premier League |
 
-SportPesa Midweek uses matches 1–13 from the same list.
+SportPesa Midweek uses a distinct 13-match list of midweek fixtures (Wed kickoffs) covering EPL, La Liga, Bundesliga, Serie A, and Eredivisie.
 
 ### Betika Jackpot (15 matches)
 

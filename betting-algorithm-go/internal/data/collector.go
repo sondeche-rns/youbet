@@ -236,8 +236,8 @@ func (c *HistoricalDataCollector) addXGData() error {
 			m.HomeXG = float64(m.HomeShots)*0.08 + float64(m.HomeShotsOnTarget)*0.22
 			m.AwayXG = float64(m.AwayShots)*0.08 + float64(m.AwayShotsOnTarget)*0.22
 		} else {
-			m.HomeXG = float64(m.HomeGoals) + (rand.Float64()-0.5)
-			m.AwayXG = float64(m.AwayGoals) + (rand.Float64()-0.5)
+			m.HomeXG = float64(m.HomeGoals) + (rand.Float64() - 0.5)
+			m.AwayXG = float64(m.AwayGoals) + (rand.Float64() - 0.5)
 		}
 		m.HomeXG = clamp(m.HomeXG, 0, 5)
 		m.AwayXG = clamp(m.AwayXG, 0, 5)
@@ -727,4 +727,3 @@ func roundTo(v float64, decimals int) float64 {
 	pow := math.Pow(10, float64(decimals))
 	return math.Round(v*pow) / pow
 }
-
