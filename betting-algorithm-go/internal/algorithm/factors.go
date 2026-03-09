@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"math"
 
-	"bet4me/internal/context"
-	"bet4me/internal/domain"
+	"bet4me/betting-algorithm-go/internal/context"
+	"bet4me/betting-algorithm-go/internal/domain"
 )
 
 // calculateAllFactors calculates all prediction factors (original 10 + new 6 contextual).
@@ -14,7 +14,12 @@ func (e *PredictionEngine) calculateAllFactors(data *MatchData) map[string]inter
 
 	// Build match context for new factors
 	contextBuilder := context.NewMatchContextBuilder(e.historicalData)
-	matchContext := contextBuilder.BuildContext(data)
+	matchContext := contextBuilder.BuildContext(
+		data.HomeTeam, data.AwayTeam,
+		data.HomePossession, data.AwayPossession,
+		data.HomePosition, data.AwayPosition,
+		data.HomeForm, data.AwayForm,
+	)
 
 	// Original 10 factors
 	factors["expectedGoals"] = e.calculateExpectedGoals(data)
@@ -406,7 +411,8 @@ func (e *PredictionEngine) calculateTeamQualityGap(data *MatchData) map[string]i
 	starSignal = math.Max(0.2, math.Min(0.8, starSignal))
 
 	// Weighted combination
-	hasElo := data.HomeElo != nil || (_, ok := e.eloRatings[data.HomeTeam]; ok)
+	_, hasEloInMap := e.eloRatings[data.HomeTeam]
+	hasElo := data.HomeElo != nil || hasEloInMap
 	var qualityScore float64
 	if hasElo {
 		qualityScore = eloSignal*0.50 + positionSignal*0.35 + starSignal*0.15

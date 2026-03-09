@@ -3,7 +3,7 @@ package algorithm
 import (
 	"sync"
 
-	"bet4me/internal/domain"
+	"bet4me/betting-algorithm-go/internal/domain"
 )
 
 // PredictionRecord represents a single prediction with its outcome.

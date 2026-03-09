@@ -4,7 +4,7 @@ import (
 	"math"
 	"time"
 
-	"bet4me/internal/domain"
+	"bet4me/betting-algorithm-go/internal/domain"
 )
 
 // PredictionEngine is the core betting algorithm using a multi-factor weighted prediction model.
@@ -430,6 +430,24 @@ type Probabilities struct {
 	Home float64
 	Draw float64
 	Away float64
+}
+
+// GetWeights returns a copy of the current factor weights.
+func (e *PredictionEngine) GetWeights() map[string]float64 {
+	out := make(map[string]float64, len(e.weights))
+	for k, v := range e.weights {
+		out[k] = v
+	}
+	return out
+}
+
+// SetWeights replaces the current factor weights and updates the sport config.
+func (e *PredictionEngine) SetWeights(weights map[string]float64) {
+	e.weights = make(map[string]float64, len(weights))
+	for k, v := range weights {
+		e.weights[k] = v
+	}
+	e.config.Weights = e.weights
 }
 
 // round rounds a float64 to the specified number of decimal places.

@@ -3,7 +3,7 @@ package algorithm
 import (
 	"math"
 
-	"bet4me/internal/domain"
+	"bet4me/betting-algorithm-go/internal/domain"
 )
 
 // calculateWeightedProbabilities calculates probabilities from weighted factors with dynamic weight normalization.
@@ -13,6 +13,7 @@ func (e *PredictionEngine) calculateWeightedProbabilities(factors map[string]int
 	drawBoostTotal := 0.0
 	homeBoostTotal := 0.0
 	awayBoostTotal := 0.0
+	_ = awayBoostTotal // collected but not yet applied in probability blending
 
 	for factorName, factorDataRaw := range factors {
 		// Handle FactorResult objects (new contextual factors)

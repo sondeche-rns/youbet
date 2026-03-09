@@ -222,23 +222,30 @@ type PredictionResponse struct {
    - Result recording + `PerformanceStats` aggregation
    - Saves `{id}.json`, `{id}.csv`, `{id}_results.json`, `jackpot_results_summary.csv`
 
-### Phase 5: HTTP API + Backtest
-**Files to create**: `internal/api/`, `internal/backtest/`, `cmd/server/`
+### Phase 5: HTTP API + Backtest ✅ COMPLETED
+**Files created**: `internal/backtest/`, `internal/api/`, `cmd/server/`
+**Reference**: `PHASE5_IMPLEMENTATION.md`
 
-1. Port `app.py` → `internal/api/` (one handler file per domain)
-   - `chi` router with middleware (CORS, logging, recovery)
-   - Each endpoint as a handler method on `Server` struct
-   - JSON response helpers for consistent error/success formatting
-   - Background data collection via goroutine + sync state
+1. Port `backtest.py` → `internal/backtest/engine.go`
+   - `BacktestEngine.Run(Config) (*Summary, error)` — chronological simulation with Kelly staking
+   - Metrics: accuracy by type/confidence, max drawdown, annualised Sharpe, profit factor
+   - Saves `backtests/backtest_{ts}.json` + `backtests/backtest_{ts}.csv`
 
-2. Port `backtest.py` → `internal/backtest/engine.go`
-   - `BacktestEngine` with `Run(config) (*BacktestResults, error)`
-   - CSV export via `encoding/csv`
+2. Port `app.py` → `internal/api/server.go`
+   - `chi` router with CORS, Logger, Recoverer middleware
+   - 27 endpoints mirroring every Flask route; handlers as methods on `Server` struct
+   - Background data collection via goroutine + `sync.RWMutex` on `CollectionStatus`
+   - `GetWeights` / `SetWeights` added to `PredictionEngine` for config endpoints
 
-3. Wire it all up in `cmd/server/main.go`
-   - Load .env, create deps, inject into Server, listen on :5000
+3. Wire in `cmd/server/main.go`
+   - Reads `DATA_DIR` / `PORT` / `ODDS_API_KEY` env vars (loaded via godotenv)
+   - Injects all dependencies; listens on `0.0.0.0:5000`
 
-**Tests**: API integration tests using `httptest.NewServer`, verify JSON response shapes.
+**Bug fixes** (pre-existing, exposed when imports were corrected):
+   - `bet4me/internal/...` → `bet4me/betting-algorithm-go/internal/...` in 5 files
+   - Import cycle `algorithm ↔ context` resolved: `BuildContext` now accepts plain params
+   - Syntax error in `factors.go:414` (invalid multi-assign in boolean) fixed
+   - Unused variable `awayBoostTotal` in `probs.go` suppressed
 
 ### Phase 6: Validation & Cutover
 1. Run Python and Go servers side-by-side on different ports

@@ -9,8 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"bet4me/internal/algorithm"
-	"bet4me/internal/domain"
+	"bet4me/betting-algorithm-go/internal/domain"
 )
 
 // MatchContextBuilder builds MatchContext from various data sources.
@@ -102,31 +101,31 @@ func calculateGamesManaged(appointmentDateStr string) int {
 	return int(weeksElapsed)
 }
 
-// BuildContext builds complete MatchContext from MatchData.
-func (b *MatchContextBuilder) BuildContext(data *algorithm.MatchData) *domain.MatchContext {
-	homeTeam := data.HomeTeam
-	awayTeam := data.AwayTeam
-
+// BuildContext builds complete MatchContext from individual match fields.
+// Parameters mirror the relevant fields of algorithm.MatchData without
+// creating an import cycle between the algorithm and context packages.
+func (b *MatchContextBuilder) BuildContext(
+	homeTeam, awayTeam string,
+	homePossession, awayPossession float64,
+	homePos, awayPos int,
+	homeFormStr, awayFormStr string,
+) *domain.MatchContext {
 	if homeTeam == "" || awayTeam == "" {
 		// Missing basic data, return neutral context
 		return domain.NewNeutralContext()
 	}
 
 	// Derive defensive styles from possession
-	homeStyle := classifyDefensiveStyle(data.HomePossession)
-	awayStyle := classifyDefensiveStyle(data.AwayPossession)
+	homeStyle := classifyDefensiveStyle(homePossession)
+	awayStyle := classifyDefensiveStyle(awayPossession)
 
 	// Build manager info (with fallback)
 	homeManager := b.getManagerInfo(homeTeam)
 	awayManager := b.getManagerInfo(awayTeam)
 
-	// Get league positions
-	homePos := data.HomePosition
-	awayPos := data.AwayPosition
-
 	// Get recent form
-	homeForm := parseForm(data.HomeForm)
-	awayForm := parseForm(data.AwayForm)
+	homeForm := parseForm(homeFormStr)
+	awayForm := parseForm(awayFormStr)
 
 	// Build H2H record (with fallback)
 	h2h := b.getH2HRecord(homeTeam, awayTeam, homePos, awayPos)
@@ -153,11 +152,11 @@ func (b *MatchContextBuilder) BuildContext(data *algorithm.MatchData) *domain.Ma
 // classifyDefensiveStyle classifies defensive style from average possession.
 func classifyDefensiveStyle(avgPossession float64) domain.DefensiveStyle {
 	if avgPossession > 55 {
-		return domain.HighPress
+		return domain.DefensiveStyleHighPress
 	} else if avgPossession >= 45 {
-		return domain.Balanced
+		return domain.DefensiveStyleBalanced
 	}
-	return domain.LowBlock
+	return domain.DefensiveStyleLowBlock
 }
 
 // parseForm parses form string into list.
