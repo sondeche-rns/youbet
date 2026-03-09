@@ -1,0 +1,18 @@
+{
+  "provider": "Betika",
+  "type": "Jackpot",
+  "fetched_at": "2026-02-23T15:08:34.719963",
+  "url": "https://www.betika.com/en-ke/jackpot",
+  "matches": [
+    {
+      "match_number": 1,
+      "home_team": "Clube Do Remo PaSc Internacional",
+      "away_team": "Clube Do Remo Pa",
+      "kickoff": null,
+      "competition": null
+    }
+  ],
+  "data_source": "selenium",
+  "prize_amount": null,
+  "matches_count": 1
+}
