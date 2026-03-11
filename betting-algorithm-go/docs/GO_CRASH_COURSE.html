@@ -1,0 +1,2389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go Crash Course — bet4me Reference Implementation</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #1a1a1a;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 40px;
+    background: #fff;
+  }
+  h1 {
+    font-size: 26px;
+    color: #00437a;
+    border-bottom: 3px solid #00437a;
+    padding-bottom: 8px;
+    margin: 28px 0 14px;
+    page-break-after: avoid;
+  }
+  h2 {
+    font-size: 20px;
+    color: #1a5276;
+    border-bottom: 1px solid #aed6f1;
+    padding-bottom: 4px;
+    margin: 22px 0 10px;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 15px;
+    color: #2471a3;
+    margin: 16px 0 6px;
+    page-break-after: avoid;
+  }
+  h4 {
+    font-size: 13px;
+    color: #555;
+    font-weight: 600;
+    margin: 12px 0 4px;
+  }
+  p { margin: 6px 0; }
+  ul { margin: 6px 0 6px 22px; }
+  li { margin: 2px 0; }
+  pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin: 10px 0;
+    overflow-x: auto;
+    font-family: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+    font-size: 11.5px;
+    line-height: 1.5;
+    page-break-inside: avoid;
+    border-left: 4px solid #89b4fa;
+  }
+  code {
+    background: #f0f4f8;
+    color: #c0392b;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 11px;
+  }
+  pre code {
+    background: transparent;
+    color: #cdd6f4;
+    padding: 0;
+    font-size: 11.5px;
+  }
+  blockquote {
+    border-left: 4px solid #3498db;
+    background: #ebf5fb;
+    padding: 8px 14px;
+    margin: 10px 0;
+    border-radius: 0 4px 4px 0;
+    color: #1a5276;
+    font-style: italic;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 10px 0;
+    font-size: 12px;
+  }
+  td, th {
+    border: 1px solid #d5dbdb;
+    padding: 6px 10px;
+    text-align: left;
+  }
+  tr:nth-child(even) { background: #f8f9fa; }
+  tr:first-child td { background: #2471a3; color: white; font-weight: 600; }
+  hr {
+    border: none;
+    border-top: 2px solid #aed6f1;
+    margin: 20px 0;
+  }
+  strong { color: #1a1a1a; }
+  
+  /* Cover page */
+  .cover {
+    text-align: center;
+    padding: 60px 20px;
+    border: 2px solid #00437a;
+    margin-bottom: 40px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f0f4f8, #e8f4fd);
+  }
+  .cover h1 { border: none; font-size: 36px; margin: 0; }
+  .cover .subtitle { font-size: 18px; color: #555; margin: 10px 0; }
+  .cover .meta { font-size: 13px; color: #777; margin-top: 20px; }
+  
+  @media print {
+    body { max-width: 100%; padding: 10px 20px; font-size: 11px; }
+    pre { font-size: 10px; }
+    h1 { font-size: 22px; page-break-before: always; }
+    h1:first-of-type { page-break-before: avoid; }
+    .cover { page-break-after: always; }
+    @page { margin: 1.5cm; size: A4; }
+  }
+</style>
+</head>
+<body>
+<div class="cover">
+  <h1 style="border:none; color:#00437a;">Go Crash Course</h1>
+  <div class="subtitle">A Practical Guide for Experienced Developers</div>
+  <div class="subtitle" style="font-size:14px; color:#2471a3;">Reference Implementation: bet4me Betting Algorithm</div>
+  <div class="meta">
+    Fortune 500 Go Engineer &amp; Technical Lecturer<br>
+    Interview Preparation &bull; All code from production codebase<br>
+    <strong>github.com/bet4me/betting-algorithm-go</strong>
+  </div>
+</div>
+<h1>Go Crash Course</h1>
+<h2>A Practical Guide for Experienced Developers</h2>
+<h3>Reference Implementation: bet4me Betting Algorithm</h3>
+<br>
+<hr>
+<br>
+<p><strong>Author:</strong> Fortune 500 Go Engineer & Technical Lecturer</p>
+<p><strong>Purpose:</strong> Interview Preparation — Practical Go fluency in one document</p>
+<p><strong>Codebase:</strong> <code>github.com/bet4me/betting-algorithm-go</code></p>
+<br>
+<hr>
+<br>
+<blockquote>**How to use this guide:** Read top to bottom once. Then use the chapter</blockquote>
+<blockquote>headers to jump back to concepts during review. The Appendices are your</blockquote>
+<blockquote>quick-reference cards on interview day.</blockquote>
+<br>
+<hr>
+<br>
+<h2>Table of Contents</h2>
+<br>
+<p>1. Why Go? The Philosophy</p>
+<p>2. Packages, Imports & the Module System</p>
+<p>3. Variables, Types & Zero Values</p>
+<p>4. Structs: Go's Answer to Classes</p>
+<p>5. Functions & Error Handling</p>
+<p>6. Interfaces: Implicit Contracts</p>
+<p>7. Slices, Maps & Closures</p>
+<p>8. Concurrency: Goroutines & Mutexes</p>
+<p>9. Methods & Receiver Types in Depth</p>
+<p>10. Working with the Standard Library</p>
+<p>11. Design Patterns in Go</p>
+<p>12. Testing in Go</p>
+<ul>
+<li>Appendix A: Go Cheat Sheet</li>
+<li>Appendix B: Interview Q&A</li>
+</ul>
+<br>
+<hr>
+<br>
+<h1>Chapter 1 — Why Go? The Philosophy</h1>
+<br>
+<h2>1.1 The Design Intent</h2>
+<br>
+<p>Go was created at Google in 2009 by Robert Griesemer, Rob Pike, and Ken Thompson. The problem they solved: large engineering teams writing C++/Java were drowning in complexity — slow compilation, byzantine dependency management, verbose concurrency.</p>
+<br>
+<p>Go's answer was radical simplicity:</p>
+<br>
+<table>
+<tr><td>Concern</td><td>Go's choice</td></tr>
+<tr><td>Compilation</td><td>Sub-second, statically linked binaries</td></tr>
+<tr><td>Type system</td><td>Static, but inferred (`x := 5`)</td></tr>
+<tr><td>Memory</td><td>Garbage collected, no manual malloc/free</td></tr>
+<tr><td>Concurrency</td><td>Goroutines (cheaper than threads) + channels</td></tr>
+<tr><td>Dependency management</td><td>Go modules (`go.mod`)</td></tr>
+<tr><td>Formatting</td><td>One style, enforced by `gofmt` — no debates</td></tr>
+<tr><td>Object-oriented</td><td>No inheritance, only composition + interfaces</td></tr>
+</table>
+<br>
+<p><strong>The golden rule of Go:</strong> If you're fighting the language, you're wrong.</p>
+<br>
+<h2>1.2 Go vs Languages You Know</h2>
+<br>
+<pre><code class="language-text">
+Python  → Go gives you static types + 10–100× speed
+Java    → Go gives you no boilerplate + 5× faster startup + no JVM
+Node.js → Go gives you true parallelism + compiled safety
+Rust    → Go gives you GC + simpler syntax (less control, more safety)
+</code></pre>
+<br>
+<h2>1.3 The bet4me Project — Your Reference Implementation</h2>
+<br>
+<p>The codebase you'll learn from is a <strong>production-grade sports betting prediction engine</strong>. It covers every important Go concept through real code:</p>
+<br>
+<pre><code class="language-text">
+betting-algorithm-go/
+├── go.mod                          ← Module definition
+└── internal/                       ← Package visibility boundary
+    ├── algorithm/
+    │   ├── algorithm.go            ← PredictionEngine, 17-factor pipeline
+    │   ├── calibration.go          ← Self-improving weights, concurrency
+    │   ├── factors.go              ← 17 modular factor calculations
+    │   ├── poisson.go              ← Poisson probability model
+    │   └── probs.go                ← Probability math + Kelly Criterion
+    ├── context/
+    │   └── builder.go              ← Match context enrichment
+    ├── data/
+    │   ├── collector.go            ← 7-step data pipeline, goroutines
+    │   ├── fixtures.go             ← HTTP + JSON API integration
+    │   └── sources.go              ← Configuration management
+    ├── domain/
+    │   └── models.go               ← Core data structures (structs)
+    ├── jackpot/
+    │   ├── analyzer.go             ← Multi-match jackpot analysis
+    │   └── fetcher.go              ← Web scraping
+    ├── storage/
+    │   └── csv.go                  ← CSV I/O with standard library
+    └── util/
+        ├── kelly.go                ← Kelly Criterion math
+        ├── performance.go          ← Thread-safe bet tracking
+        └── teams.go                ← Team name normalization
+</code></pre>
+<br>
+<hr>
+<br>
+<h1>Chapter 2 — Packages, Imports & the Module System</h1>
+<br>
+<h2>2.1 Every File Declares Its Package</h2>
+<br>
+<p>The <strong>first non-comment line</strong> of every Go file must be a package declaration:</p>
+<br>
+<pre><code class="language-go">
+// From betting-algorithm-go/internal/algorithm/algorithm.go
+
+// Package algorithm implements the multi-factor sports betting prediction engine.
+//
+// The engine combines 17 weighted factors with a Poisson goal model and
+// Platt-scaling calibration to produce match probabilities and
+// Kelly-Criterion-based betting recommendations.
+package algorithm
+</code></pre>
+<br>
+<pre><code class="language-go">
+// From internal/domain/models.go
+package domain
+</code></pre>
+<br>
+<pre><code class="language-go">
+// From internal/storage/csv.go
+package storage
+</code></pre>
+<br>
+<blockquote>**Rule:** All `.go` files in the same directory must share the same package name.</blockquote>
+<br>
+<h2>2.2 The Module System (`go.mod`)</h2>
+<br>
+<p>A module is a collection of packages. Every Go project has exactly one <code>go.mod</code> at its root:</p>
+<br>
+<pre><code class="language-go">
+// betting-algorithm-go/go.mod
+module github.com/bet4me/betting-algorithm-go
+
+go 1.23.6
+</code></pre>
+<br>
+<p>This defines:</p>
+<ul>
+<li><code>module github.com/bet4me/betting-algorithm-go</code> — the module path (also the import prefix)</li>
+<li><code>go 1.23.6</code> — the minimum Go version required</li>
+</ul>
+<br>
+<p><strong>Common <code>go</code> CLI commands:</strong></p>
+<br>
+<pre><code class="language-bash">
+go mod init github.com/myorg/myproject  # Create a new module
+go get github.com/some/package          # Add a dependency
+go mod tidy                             # Remove unused deps, add missing ones
+go build ./...                          # Build everything
+go test ./...                           # Test everything
+go run main.go                          # Run a program directly
+</code></pre>
+<br>
+<h2>2.3 Importing Packages</h2>
+<br>
+<pre><code class="language-go">
+// From internal/algorithm/algorithm.go
+
+import (
+    "fmt"       // Standard library — just the package name
+    "math"
+    "time"
+
+    // Your own packages — full module path
+    mctx "github.com/bet4me/betting-algorithm-go/internal/context"
+    "github.com/bet4me/betting-algorithm-go/internal/domain"
+)
+</code></pre>
+<br>
+<p>Key import patterns:</p>
+<br>
+<pre><code class="language-go">
+import "fmt"                    // Normal import
+import m "math"                 // Alias: use as m.Sqrt(...)
+import _ "some/package"         // Blank import: run init() only, suppress unused error
+import . "fmt"                  // Dot import: use Println directly (rare, avoid)
+</code></pre>
+<br>
+<h2>2.4 The `internal/` Package Visibility Rule</h2>
+<br>
+<p>This is one of Go's most important visibility mechanisms. A package inside an <code>internal/</code> directory <strong>can only be imported by code rooted at the parent of that <code>internal/</code> directory</strong>.</p>
+<br>
+<pre><code class="language-text">
+betting-algorithm-go/
+├── internal/         ← Only code INSIDE betting-algorithm-go/ can import this
+│   ├── domain/
+│   ├── algorithm/
+│   └── storage/
+</code></pre>
+<br>
+<p>External libraries <strong>cannot</strong> import <code>internal/domain</code>. This enforces API boundaries — the ultimate Go encapsulation.</p>
+<br>
+<h2>2.5 Exported vs Unexported Identifiers</h2>
+<br>
+<p>Go uses <strong>capitalization</strong> for access control — no <code>public</code>/<code>private</code> keywords:</p>
+<br>
+<pre><code class="language-go">
+// Exported (public) — starts with uppercase
+type PredictionEngine struct { ... }
+func NewPredictionEngine(...) *PredictionEngine { ... }
+
+// Unexported (private to package) — starts with lowercase
+type sportConfig struct { ... }
+type calibParams struct { ... }
+func cloneWeights(w map[string]float64) map[string]float64 { ... }
+</code></pre>
+<br>
+<blockquote>From `algorithm.go`: `PredictionEngine` is exported (users of the package can use it).</blockquote>
+<blockquote>`sportConfig` is unexported (internal implementation detail).</blockquote>
+<br>
+<hr>
+<br>
+<h1>Chapter 3 — Variables, Types & Zero Values</h1>
+<br>
+<h2>3.1 Variable Declaration</h2>
+<br>
+<p>Go has multiple syntaxes. Use <code>:=</code> inside functions (short declaration), <code>var</code> at package level:</p>
+<br>
+<pre><code class="language-go">
+// Short declaration — most common inside functions
+engine := NewPredictionEngine("football", true, false)
+homeElo := 1500.0
+correct := 0
+
+// var — explicit type
+var learningRate float64 = 0.01
+var name string          // zero value: ""
+var count int            // zero value: 0
+var enabled bool         // zero value: false
+
+// Multiple assignment
+homeGoals, awayGoals := 2, 1
+
+// Blank identifier — discard a value
+result, _ := someFunc()  // ignore the error (rarely good practice)
+</code></pre>
+<br>
+<h2>3.2 Primitive Types</h2>
+<br>
+<pre><code class="language-go">
+// Integers
+var i int     = 42        // platform-width (32 or 64 bit)
+var i8 int8   = 127
+var i64 int64 = 9_000_000_000
+var u uint    = 255       // unsigned
+
+// Floats
+var f32 float32 = 3.14
+var f64 float64 = 3.14159265358979  // default for floating point literals
+
+// String — immutable, UTF-8
+var s string = "Manchester City"
+
+// Boolean
+var b bool = true
+
+// byte = uint8, rune = int32 (Unicode code point)
+var ch byte = 'A'
+var r rune  = '🏆'
+</code></pre>
+<br>
+<p>From the bet4me codebase — spot every type in use:</p>
+<br>
+<pre><code class="language-go">
+// internal/algorithm/algorithm.go
+type sportConfig struct {
+    homeAdvantage  float64   // 0.10 = 10%
+    baseElo        float64   // 1500.0
+    kFactor        float64   // 32
+    drawThreshold  float64   // 0.25
+    minConfidence  float64
+    maxGoalsLambda float64
+    weights        map[string]float64  // map with float64 values
+}
+</code></pre>
+<br>
+<h2>3.3 Zero Values — Go's Null Safety</h2>
+<br>
+<p>Every type has a <strong>zero value</strong> — the value a variable holds when declared but not initialized. Go never has uninitialized memory:</p>
+<br>
+<table>
+<tr><td>Type</td><td>Zero value</td></tr>
+<tr><td>`int`, `float64`</td><td>`0`, `0.0`</td></tr>
+<tr><td>`string`</td><td>`""`</td></tr>
+<tr><td>`bool`</td><td>`false`</td></tr>
+<tr><td>`pointer`, `slice`, `map`, `channel`, `interface`</td><td>`nil`</td></tr>
+<tr><td>`struct`</td><td>all fields at their zero values</td></tr>
+</table>
+<br>
+<pre><code class="language-go">
+// From algorithm.go — zero-value check for Elo ratings
+func (e *PredictionEngine) UpdateElo(homeTeam, awayTeam string, homeGoals, awayGoals int) {
+    homeElo := e.eloRatings[homeTeam]
+    if homeElo == 0 {               // ← zero-value check: team not yet in map
+        homeElo = e.config.baseElo  // default to 1500
+    }
+    awayElo := e.eloRatings[awayTeam]
+    if awayElo == 0 {
+        awayElo = e.config.baseElo
+    }
+    // ...
+}
+</code></pre>
+<br>
+<h2>3.4 Constants and `iota`</h2>
+<br>
+<p>Constants are computed at compile time. <code>iota</code> is an auto-incrementing counter used inside <code>const</code> blocks — Go's idiomatic enum:</p>
+<br>
+<pre><code class="language-go">
+// From internal/domain/ — WeightNormalizationMode
+type WeightNormalizationMode int
+
+const (
+    WeightNormDynamic WeightNormalizationMode = iota  // 0
+    WeightNormStatic                                   // 1
+)
+
+// From internal/domain/ — DefensiveStyle
+type DefensiveStyle string
+
+const (
+    DefensiveStyleHighPress    DefensiveStyle = "high_press"
+    DefensiveStyleBalanced     DefensiveStyle = "balanced"
+    DefensiveStyleLowBlock     DefensiveStyle = "low_block"
+    DefensiveStyleCounterAttack DefensiveStyle = "counter_attack"
+)
+</code></pre>
+<br>
+<pre><code class="language-go">
+// Using iota for bitmask flags (common pattern)
+const (
+    ReadPerm  = 1 &lt;&lt; iota  // 1 (binary: 001)
+    WritePerm               // 2 (binary: 010)
+    ExecPerm                // 4 (binary: 100)
+)
+</code></pre>
+<br>
+<h2>3.5 Type Conversions</h2>
+<br>
+<p>Go <strong>never</strong> implicitly converts numeric types. You must be explicit:</p>
+<br>
+<pre><code class="language-go">
+shots := 11           // int
+sot   := 4            // int
+accuracy := float64(sot) / float64(shots)  // explicit conversion
+
+// From factors.go:
+homeAccuracy := float64(homeSOT) / math.Max(float64(homeShots), 1)
+</code></pre>
+<br>
+<hr>
+<br>
+<h1>Chapter 4 — Structs: Go's Answer to Classes</h1>
+<br>
+<h2>4.1 Struct Definition</h2>
+<br>
+<p>Go has no classes. Instead it has structs — named collections of fields:</p>
+<br>
+<pre><code class="language-go">
+// From internal/domain/models.go
+
+// FactorResult is the standardized output for all prediction factors.
+type FactorResult struct {
+    Name        string         `json:"name"`        // struct tags
+    Value       float64        `json:"value"`
+    Weight      float64        `json:"weight"`
+    Triggered   bool           `json:"triggered"`
+    Confidence  int            `json:"confidence"`
+    Explanation string         `json:"explanation"`
+    Metadata    map[string]any `json:"metadata"`
+}
+</code></pre>
+<br>
+<p>The backtick annotations after field types are <strong>struct tags</strong> — metadata used by packages like <code>encoding/json</code> and <code>encoding/csv</code> for serialization. <code>json:"name"</code> means: when marshaling to JSON, use the key <code>"name"</code> instead of <code>"Name"</code>.</p>
+<br>
+<h2>4.2 Creating Struct Instances</h2>
+<br>
+<pre><code class="language-go">
+// Named field initialization (preferred — order-independent, self-documenting)
+result := domain.FactorResult{
+    Name:        "h2hAnomaly",
+    Value:       0.65,
+    Weight:      0.08,
+    Triggered:   true,
+    Confidence:  75,
+    Explanation: "Weaker team unbeaten in last 4 H2H matches",
+    Metadata:    map[string]any{"streak": 4},
+}
+
+// Positional initialization (fragile — avoid for structs with many fields)
+cfg := sportConfig{0.10, 1500, 32, 0.25, 0.55, 4.0, nil}
+
+// Zero value struct — all fields at zero values
+var empty FactorResult
+
+// Pointer to a new struct
+p := &amp;FactorResult{Name: "xg", Value: 0.55}
+</code></pre>
+<br>
+<h2>4.3 Struct Tags — JSON & CSV Serialization</h2>
+<br>
+<pre><code class="language-go">
+// From internal/storage/csv.go
+type MatchRecord struct {
+    Date      string  `json:"date"`
+    HomeTeam  string  `json:"home_team"`
+    HomeGoals int     `json:"home_goals"`
+    HomeXG    float64 `json:"home_xg"`
+    HomeOdds  float64 `json:"home_odds"`
+    HomeForm  string  `json:"home_form"`
+}
+</code></pre>
+<br>
+<p>The JSON package uses these tags automatically:</p>
+<br>
+<pre><code class="language-go">
+import "encoding/json"
+
+rec := MatchRecord{HomeTeam: "Arsenal", HomeGoals: 2, HomeXG: 1.8}
+b, _ := json.Marshal(rec)
+// Output: {"date":"","home_team":"Arsenal","home_goals":2,"home_xg":1.8,...}
+
+// omitempty — omit field from JSON if it's the zero value
+type MatchContext struct {
+    HomeManagerInfo *ManagerInfo `json:"homeManagerInfo,omitempty"`
+}
+</code></pre>
+<br>
+<h2>4.4 The Constructor Pattern</h2>
+<br>
+<p>Go has no constructors. The convention is a <code>NewXxx()</code> function that returns a pointer:</p>
+<br>
+<pre><code class="language-go">
+// From internal/storage/csv.go
+type CSVStore struct {
+    DataDir string
+}
+
+// Constructor — validates, initializes, returns a pointer
+func NewCSVStore(dataDir string) *CSVStore {
+    return &amp;CSVStore{DataDir: dataDir}
+}
+
+// Usage
+store := storage.NewCSVStore("./data")
+</code></pre>
+<br>
+<pre><code class="language-go">
+// From internal/algorithm/algorithm.go
+func NewPredictionEngine(sport string, useV2Weights bool, enableCalibration bool) *PredictionEngine {
+    e := &amp;PredictionEngine{
+        sport:      sport,
+        eloRatings: make(map[string]float64),  // always initialize maps!
+        calib:      calibParams{a: 1.0, b: 0.0},
+    }
+
+    e.config = e.loadSportConfig(sport)
+    if useV2Weights &amp;&amp; sport == "football" {
+        e.config.weights = cloneWeights(domain.FootballWeightsV2)
+    }
+    if enableCalibration {
+        e.calibrationEngine = NewCalibrationEngine(0.01, 1000)
+    }
+
+    return e
+}
+</code></pre>
+<br>
+<blockquote>**Why return a pointer?** Structs are value types in Go — assignment copies them. Returning `*PredictionEngine` means callers share the same instance (and modifications are visible). For large structs or mutable state, always return pointers.</blockquote>
+<br>
+<h2>4.5 Struct Embedding (Composition over Inheritance)</h2>
+<br>
+<p>Go has no inheritance. Instead, embed one struct inside another to reuse fields and methods:</p>
+<br>
+<pre><code class="language-go">
+type Animal struct {
+    Name string
+}
+func (a Animal) Speak() string { return a.Name + " speaks" }
+
+type Dog struct {
+    Animal               // Embedded struct — promotes all Animal fields/methods
+    Breed string
+}
+
+d := Dog{Animal: Animal{Name: "Rex"}, Breed: "Labrador"}
+fmt.Println(d.Name)     // d.Animal.Name — promoted
+fmt.Println(d.Speak())  // d.Animal.Speak() — promoted
+</code></pre>
+<br>
+<hr>
+<br>
+<h1>Chapter 5 — Functions & Error Handling</h1>
+<br>
+<h2>5.1 Function Basics</h2>
+<br>
+<pre><code class="language-go">
+// Basic function
+func add(a, b int) int {
+    return a + b
+}
+
+// Multiple parameters of same type — shorthand
+func addTwo(a, b int) int { return a + b }
+
+// Multiple return values — Go's killer feature
+func divide(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, fmt.Errorf("division by zero")
+    }
+    return a / b, nil
+}
+</code></pre>
+<br>
+<h2>5.2 Multiple Return Values & Error Handling</h2>
+<br>
+<p>Go functions <strong>conventionally return <code>(value, error)</code></strong>. This forces callers to think about errors.</p>
+<br>
+<pre><code class="language-go">
+// From internal/storage/csv.go
+func (s *CSVStore) ReadHistoricalData(filename string) ([]MatchRecord, error) {
+    path := s.DataDir + "/" + filename
+    f, err := os.Open(path)
+    if err != nil {
+        return nil, fmt.Errorf("open %s: %w", path, err)  // wrap with context
+    }
+    defer f.Close()   // ← we'll explain defer below
+
+    return parseMatchCSV(f)
+}
+</code></pre>
+<br>
+<p>Calling it:</p>
+<pre><code class="language-go">
+records, err := store.ReadHistoricalData("premier_league.csv")
+if err != nil {
+    log.Fatalf("failed to load data: %v", err)
+}
+// Use records safely here
+</code></pre>
+<br>
+<p><strong>The <code>if err != nil</code> pattern is not a bug</strong> — it's intentional. Go trades exception handling for explicit, local error handling. There are no try/catch blocks.</p>
+<br>
+<h2>5.3 Error Wrapping with `%w`</h2>
+<br>
+<pre><code class="language-go">
+// %w wraps the original error so callers can inspect it
+return nil, fmt.Errorf("open %s: %w", path, err)
+
+// Caller can unwrap
+if errors.Is(err, os.ErrNotExist) {
+    // file doesn't exist
+}
+
+var pathErr *os.PathError
+if errors.As(err, &amp;pathErr) {
+    fmt.Println("path:", pathErr.Path)
+}
+</code></pre>
+<br>
+<h2>5.4 `defer` — Guaranteed Cleanup</h2>
+<br>
+<p><code>defer</code> schedules a function call to run <strong>when the surrounding function returns</strong>, regardless of how it returns (normal or error). It's Go's equivalent of <code>finally</code>:</p>
+<br>
+<pre><code class="language-go">
+// From storage/csv.go
+func (s *CSVStore) ReadHistoricalData(filename string) ([]MatchRecord, error) {
+    f, err := os.Open(path)
+    if err != nil {
+        return nil, err
+    }
+    defer f.Close()   // ← guaranteed to run when ReadHistoricalData returns
+    // ... rest of function
+}
+
+// From csv.go WriteHistoricalData
+func (s *CSVStore) WriteHistoricalData(filename string, records []MatchRecord) error {
+    f, err := os.Create(path)
+    if err != nil {
+        return err
+    }
+    defer f.Close()
+
+    w := csv.NewWriter(f)
+    defer w.Flush()  // multiple defers run in LIFO order (Flush before Close)
+
+    // ... write data
+    return nil
+}
+</code></pre>
+<br>
+<blockquote>**Defer is LIFO** (Last In, First Out). Multiple defers unwind in reverse order of declaration.</blockquote>
+<br>
+<h2>5.5 Input Validation</h2>
+<br>
+<pre><code class="language-go">
+// From internal/algorithm/algorithm.go
+func (e *PredictionEngine) Predict(data *domain.MatchData) (*domain.PredictionResult, error) {
+    if data == nil {
+        return nil, fmt.Errorf("match data is required")
+    }
+    if data.HomeTeam == "" || data.AwayTeam == "" {
+        return nil, fmt.Errorf("homeTeam and awayTeam are required")
+    }
+    // ... proceed safely
+}
+</code></pre>
+<br>
+<h2>5.6 Named Return Values</h2>
+<br>
+<p>Go allows naming return values — useful for documentation and <code>defer</code>-based cleanup:</p>
+<br>
+<pre><code class="language-go">
+// Named returns — rarely needed but useful for complex functions
+func computeStats(results []string) (wins, draws, losses int) {
+    for _, r := range results {
+        switch r {
+        case "W":
+            wins++
+        case "D":
+            draws++
+        case "L":
+            losses++
+        }
+    }
+    return  // "naked return" — returns wins, draws, losses as-is
+}
+</code></pre>
+<br>
+<h2>5.7 Variadic Functions</h2>
+<br>
+<pre><code class="language-go">
+// Accept any number of arguments
+func sum(nums ...int) int {
+    total := 0
+    for _, n := range nums {
+        total += n
+    }
+    return total
+}
+
+sum(1, 2, 3)         // 6
+nums := []int{1, 2, 3}
+sum(nums...)          // spread a slice into variadic args
+</code></pre>
+<br>
+<p>From <code>storage/csv.go</code> — variadic column lookup:</p>
+<pre><code class="language-go">
+// getCol returns the first matching column value from a row.
+// Multiple names handle different CSV formats (football-data.co.uk vs custom).
+func getCol(row []string, idx map[string]int, names ...string) string {
+    for _, name := range names {
+        if i, ok := idx[name]; ok &amp;&amp; i &lt; len(row) {
+            return strings.TrimSpace(row[i])
+        }
+    }
+    return ""
+}
+
+// Called with multiple possible column names:
+HomeTeam: getCol(row, colIdx, "HomeTeam", "home_team"),
+HomeGoals: getColInt(row, colIdx, "HomeGoals", "home_goals", "FTHG"),
+HomeOdds:  getColFloat(row, colIdx, "HomeOdds", "home_odds", "B365H", "PSH"),
+</code></pre>
+<br>
+<hr>
+<br>
+<h1>Chapter 6 — Interfaces: Implicit Contracts</h1>
+<br>
+<h2>6.1 What is a Go Interface?</h2>
+<br>
+<p>An interface defines a <strong>set of method signatures</strong>. Any type that implements those methods <strong>automatically satisfies</strong> the interface — no <code>implements</code> keyword needed.</p>
+<br>
+<pre><code class="language-go">
+// Define an interface
+type Stringer interface {
+    String() string  // any type with a String() string method satisfies this
+}
+
+// A type satisfies an interface just by having the right methods
+type ManagerInfo struct {
+    Name         string
+    GamesManaged int
+}
+
+func (m *ManagerInfo) String() string {
+    return fmt.Sprintf("%s (%d games)", m.Name, m.GamesManaged)
+}
+
+// ManagerInfo now satisfies fmt.Stringer — automatically
+var s fmt.Stringer = &amp;ManagerInfo{Name: "Pep Guardiola", GamesManaged: 42}
+fmt.Println(s) // calls String() automatically
+</code></pre>
+<br>
+<h2>6.2 The `error` Interface</h2>
+<br>
+<p>The built-in <code>error</code> type is just an interface:</p>
+<br>
+<pre><code class="language-go">
+// This is the entire definition of the error interface in Go's standard library:
+type error interface {
+    Error() string
+}
+</code></pre>
+<br>
+<p>Any type with an <code>Error() string</code> method is an <code>error</code>. That's why you can create custom errors:</p>
+<br>
+<pre><code class="language-go">
+// Custom error type
+type ValidationError struct {
+    Field   string
+    Message string
+}
+
+func (e *ValidationError) Error() string {
+    return fmt.Sprintf("validation failed on %s: %s", e.Field, e.Message)
+}
+
+// From domain/models.go — Validate() returns the built-in error interface
+func (f *FactorResult) Validate() error {
+    if f.Value &lt; -1.0 || f.Value &gt; 1.0 {
+        return fmt.Errorf("FactorResult value %.4f out of range [-1.0, 1.0]", f.Value)
+    }
+    if f.Confidence &lt; 0 || f.Confidence &gt; 100 {
+        return fmt.Errorf("confidence %d out of range [0, 100]", f.Confidence)
+    }
+    if f.Weight &lt; 0 {
+        return fmt.Errorf("weight %.4f must be non-negative", f.Weight)
+    }
+    if f.Metadata == nil {
+        f.Metadata = make(map[string]any)
+    }
+    return nil
+}
+</code></pre>
+<br>
+<h2>6.3 The Empty Interface: `any` / `interface{}`</h2>
+<br>
+<p><code>interface{}</code> (also written <code>any</code> in Go 1.18+) accepts <strong>any type</strong>. It's Go's escape hatch from the type system — use sparingly.</p>
+<br>
+<pre><code class="language-go">
+// From domain/models.go — Metadata accepts any value
+type FactorResult struct {
+    Metadata map[string]any `json:"metadata"`   // any = interface{}
+}
+
+// From algorithm.go — factors map stores different types
+type PredictionEngine struct {
+    historicalData interface{}   // could be anything
+}
+
+func (e *PredictionEngine) calculateAllFactors(
+    data *domain.MatchData,
+    ctx *domain.MatchContext,
+) map[string]interface{} {   // returns a map of mixed types
+    factors := make(map[string]interface{}, 17)
+    factors["expectedGoals"] = e.calculateExpectedGoals(data)  // map[string]interface{}
+    factors["h2hAnomaly"]    = e.calculateH2HFactors(...)       // domain.FactorResult
+    // ...
+}
+</code></pre>
+<br>
+<h2>6.4 Type Assertions & Type Switches</h2>
+<br>
+<p>To get a concrete value back out of an interface:</p>
+<br>
+<pre><code class="language-go">
+// Type assertion — panics if wrong type
+val := someInterface.(string)
+
+// Safe type assertion — returns (value, ok bool)
+if val, ok := someInterface.(string); ok {
+    fmt.Println("it's a string:", val)
+}
+
+// Type switch — check multiple types
+func describe(i interface{}) {
+    switch v := i.(type) {
+    case int:
+        fmt.Printf("int: %d\n", v)
+    case string:
+        fmt.Printf("string: %s\n", v)
+    case bool:
+        fmt.Printf("bool: %t\n", v)
+    default:
+        fmt.Printf("unknown: %T\n", v)
+    }
+}
+</code></pre>
+<br>
+<p>From <code>calibration.go</code> — type assertion in real code:</p>
+<br>
+<pre><code class="language-go">
+// From internal/algorithm/calibration.go
+// Reads a float64 from an interface{} map safely
+if m, ok := toMap(raw); ok {
+    triggered, _ := m["triggered"].(bool)   // ← safe type assertion, ignore ok
+    if triggered || isLegacyFactor(raw) {
+        stats.Total++
+        if w, ok := m["weight"].(float64); ok {  // ← safe assertion, check ok
+            stats.Contribution = w
+        }
+    }
+}
+</code></pre>
+<br>
+<p>From <code>algorithm.go</code> — type switch equivalent:</p>
+<br>
+<pre><code class="language-go">
+// getFloat reads a float64 from a map[string]interface{}
+func getFloat(m map[string]interface{}, key string, dflt float64) float64 {
+    if m == nil {
+        return dflt
+    }
+    if v, ok := m[key]; ok {
+        switch val := v.(type) {   // ← type switch
+        case float64:
+            return val
+        case int:
+            return float64(val)
+        }
+    }
+    return dflt
+}
+</code></pre>
+<br>
+<h2>6.5 Interface Composition</h2>
+<br>
+<p>Interfaces can embed other interfaces:</p>
+<br>
+<pre><code class="language-go">
+// io.ReadWriter from standard library — composition
+type Reader interface {
+    Read(p []byte) (n int, err error)
+}
+type Writer interface {
+    Write(p []byte) (n int, err error)
+}
+type ReadWriter interface {
+    Reader   // embed Reader
+    Writer   // embed Writer
+}
+</code></pre>
+<br>
+<hr>
+<br>
+<h1>Chapter 7 — Slices, Maps & Closures</h1>
+<br>
+<h2>7.1 Slices</h2>
+<br>
+<p>A slice is Go's dynamic array. It's a descriptor: <code>(pointer, length, capacity)</code>.</p>
+<br>
+<pre><code class="language-go">
+// Create
+nums := []int{1, 2, 3, 4, 5}          // literal
+empty := make([]string, 0, 10)         // make(type, len, cap)
+var nilSlice []int                      // nil slice — length 0, capacity 0
+
+// Append
+nums = append(nums, 6)                  // always reassign
+nums = append(nums, 7, 8, 9)
+more := []int{10, 11}
+nums = append(nums, more...)            // spread
+
+// Sub-slice (shares underlying array!)
+first3 := nums[0:3]    // [1, 2, 3]
+from2  := nums[2:]     // [3, 4, 5, ...]
+upto3  := nums[:3]     // [1, 2, 3]
+
+// Length and capacity
+len(nums)   // current length
+cap(nums)   // allocated capacity
+
+// Iterate
+for i, v := range nums {
+    fmt.Println(i, v)
+}
+for _, v := range nums {    // ignore index
+    fmt.Println(v)
+}
+</code></pre>
+<br>
+<p>From <code>domain/models.go</code> — slices in real structs:</p>
+<br>
+<pre><code class="language-go">
+type MatchContext struct {
+    HomeRecentForm []string `json:"homeRecentForm"`  // ["W", "D", "L", ...]
+    AwayRecentForm []string `json:"awayRecentForm"`
+
+    H2HResults []H2HResult  // slice of structs
+}
+
+// RecentWins — slice sub-slicing in real code
+func (c *MatchContext) RecentWins(team string, lastN int) int {
+    var form []string
+    if team == "home" {
+        form = c.HomeRecentForm
+    } else {
+        form = c.AwayRecentForm
+    }
+    start := len(form) - lastN   // calculate start index
+    if start &lt; 0 {
+        start = 0
+    }
+    wins := 0
+    for _, r := range form[start:] {  // sub-slice from start to end
+        if r == "W" {
+            wins++
+        }
+    }
+    return wins
+}
+</code></pre>
+<br>
+<p>From <code>algorithm/calibration.go</code> — rolling history window:</p>
+<br>
+<pre><code class="language-go">
+// Maintain rolling history — if over maxHistory, drop oldest
+ce.history = append(ce.history, rec)
+if len(ce.history) &gt; ce.maxHistory {
+    ce.history = ce.history[1:]   // drop first element — O(n) but simple
+}
+</code></pre>
+<br>
+<h2>7.2 Maps</h2>
+<br>
+<p>A map is a hash table: <code>map[KeyType]ValueType</code>.</p>
+<br>
+<pre><code class="language-go">
+// Create — ALWAYS use make() for maps you'll write to
+eloRatings := make(map[string]float64)
+weights    := make(map[string]float64, 17)  // optional hint for initial capacity
+
+// Literal initialization
+tacticalScores := map[string]float64{
+    "attacking": 0.45,
+    "defensive": 0.35,
+    "balanced":  0.30,
+}
+
+// Read
+elo := eloRatings["Arsenal"]    // zero value (0.0) if key missing
+
+// Comma-ok pattern — check if key exists
+if elo, ok := eloRatings["Arsenal"]; ok {
+    fmt.Println("Arsenal Elo:", elo)
+} else {
+    fmt.Println("Arsenal not found")
+}
+
+// Write
+eloRatings["Arsenal"] = 1580.5
+
+// Delete
+delete(eloRatings, "Arsenal")
+
+// Iterate (order NOT guaranteed)
+for team, elo := range eloRatings {
+    fmt.Printf("%s: %.1f\n", team, elo)
+}
+</code></pre>
+<br>
+<p>From <code>algorithm.go</code> — real map usage:</p>
+<br>
+<pre><code class="language-go">
+type PredictionEngine struct {
+    eloRatings map[string]float64  // field: team → Elo rating
+}
+
+func (e *PredictionEngine) UpdateElo(homeTeam, awayTeam string, homeGoals, awayGoals int) {
+    homeElo := e.eloRatings[homeTeam]   // zero value if not found
+    if homeElo == 0 {
+        homeElo = e.config.baseElo
+    }
+    // ...
+    e.eloRatings[homeTeam] = homeElo + k*(actualHome-expectedHome)  // update
+    e.eloRatings[awayTeam] = awayElo + k*(actualAway-expectedAway)
+}
+</code></pre>
+<br>
+<blockquote>**CRITICAL:** Never use a nil map for writing — it panics. Always `make()` before writing.</blockquote>
+<blockquote>Reading from a nil map returns zero values (safe). Writing panics.</blockquote>
+<br>
+<pre><code class="language-go">
+var m map[string]int    // nil map
+_ = m["key"]           // OK: returns 0
+m["key"] = 1           // PANIC: assignment to entry in nil map
+</code></pre>
+<br>
+<h2>7.3 The `cloneWeights` Pattern</h2>
+<br>
+<pre><code class="language-go">
+// From algorithm.go — deep copy of a map (maps are reference types)
+func cloneWeights(w map[string]float64) map[string]float64 {
+    out := make(map[string]float64, len(w))
+    for k, v := range w {
+        out[k] = v
+    }
+    return out
+}
+
+// Why? Maps are reference types. This:
+a := map[string]float64{"x": 1.0}
+b := a          // b and a point to the SAME underlying map
+b["x"] = 99    // also changes a["x"]!
+
+// cloneWeights() creates an independent copy
+b := cloneWeights(a)  // now b is independent
+</code></pre>
+<br>
+<h2>7.4 Closures</h2>
+<br>
+<p>A closure is a function that <strong>captures</strong> variables from its surrounding scope:</p>
+<br>
+<pre><code class="language-go">
+// Simple closure
+counter := func() func() int {
+    n := 0
+    return func() int {
+        n++
+        return n
+    }
+}()
+
+counter()  // 1
+counter()  // 2
+counter()  // 3
+
+// From data/collector.go — goroutine with closure
+func (c *HistoricalDataCollector) StartCollection(
+    ctx context.Context,
+    seasons, leagues []string,
+) *CollectionStatus {
+    status := &amp;CollectionStatus{Running: true}
+
+    go func() {   // ← anonymous function (closure) run as goroutine
+        // Captures: ctx, seasons, leagues, status, c
+        err := c.runPipeline(ctx, seasons, leagues, status)
+        status.finish(err)  // captures status from outer scope
+    }()
+
+    return status  // return immediately — pipeline runs in background
+}
+</code></pre>
+<br>
+<hr>
+<br>
+<h1>Chapter 8 — Concurrency: Goroutines & Mutexes</h1>
+<br>
+<h2>8.1 Goroutines</h2>
+<br>
+<p>A goroutine is a <strong>lightweight thread</strong> managed by the Go runtime. Creating one costs ~2KB of stack (vs ~1MB for OS threads). You can have millions of goroutines.</p>
+<br>
+<pre><code class="language-go">
+// Launch a goroutine with the `go` keyword
+go someFunction()
+
+// Anonymous goroutine (most common pattern)
+go func() {
+    // ... runs concurrently
+}()
+
+// From data/collector.go
+func (c *HistoricalDataCollector) StartCollection(
+    ctx context.Context,
+    seasons, leagues []string,
+) *CollectionStatus {
+    status := &amp;CollectionStatus{Running: true}
+
+    go func() {
+        err := c.runPipeline(ctx, seasons, leagues, status)
+        status.finish(err)
+    }()
+
+    return status   // returns immediately; goroutine runs in background
+}
+</code></pre>
+<br>
+<h2>8.2 The Race Condition Problem</h2>
+<br>
+<p>When multiple goroutines access shared data, you get a <strong>data race</strong>:</p>
+<br>
+<pre><code class="language-go">
+// DANGEROUS — race condition
+var count int
+go func() { count++ }()   // goroutine 1
+go func() { count++ }()   // goroutine 2
+// final count: could be 1 or 2, not guaranteed
+</code></pre>
+<br>
+<h2>8.3 `sync.Mutex` — Mutual Exclusion</h2>
+<br>
+<p>A Mutex ensures only one goroutine accesses a resource at a time:</p>
+<br>
+<pre><code class="language-go">
+import "sync"
+
+type SafeCounter struct {
+    mu    sync.Mutex  // zero value is valid (unlocked)
+    count int
+}
+
+func (c *SafeCounter) Increment() {
+    c.mu.Lock()         // acquire the lock
+    defer c.mu.Unlock() // release when function returns (defer is perfect here)
+    c.count++
+}
+
+func (c *SafeCounter) Value() int {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    return c.count
+}
+</code></pre>
+<br>
+<h2>8.4 `sync.RWMutex` — Read-Write Mutex</h2>
+<br>
+<p>When reads are frequent and writes are rare, <code>RWMutex</code> allows <strong>multiple concurrent readers</strong> but only one writer at a time — much more efficient than a plain Mutex:</p>
+<br>
+<pre><code class="language-go">
+// From internal/algorithm/calibration.go
+type CalibrationEngine struct {
+    mu           sync.RWMutex   // read-write mutex
+    learningRate float64
+    maxHistory   int
+    history      []PredictionRecord
+    factorPerf   map[string]*factorStats
+}
+
+// WRITE operation — exclusive lock
+func (ce *CalibrationEngine) RecordPrediction(
+    matchID string,
+    // ...
+) {
+    // ... compute rec ...
+    ce.mu.Lock()          // exclusive write lock
+    defer ce.mu.Unlock()
+
+    ce.history = append(ce.history, rec)   // safe to write
+    // update factorPerf...
+}
+
+// READ operation — shared lock (multiple goroutines can hold this simultaneously)
+func (ce *CalibrationEngine) CalibrateWeights(current map[string]float64) map[string]float64 {
+    ce.mu.RLock()          // shared read lock
+    defer ce.mu.RUnlock()
+
+    if len(ce.history) &lt; 20 {   // safe to read
+        return current
+    }
+    // ... compute adjusted weights ...
+}
+
+// Another READ operation
+func (ce *CalibrationEngine) GetPerformanceReport() map[string]interface{} {
+    ce.mu.RLock()
+    defer ce.mu.RUnlock()
+
+    // ... read history and factorPerf ...
+}
+</code></pre>
+<br>
+<p><strong>Rule of thumb:</strong></p>
+<ul>
+<li><code>mu.Lock()</code> / <code>mu.Unlock()</code> → writing (exclusive)</li>
+<li><code>mu.RLock()</code> / <code>mu.RUnlock()</code> → reading (shared)</li>
+</ul>
+<br>
+<h2>8.5 CollectionStatus — Real Concurrent State</h2>
+<br>
+<p>From <code>data/collector.go</code> — a shared status object accessed by multiple goroutines:</p>
+<br>
+<pre><code class="language-go">
+type CollectionStatus struct {
+    mu        sync.RWMutex
+    Running   bool   `json:"running"`
+    Progress  int    `json:"progress"`
+    Step      string `json:"step"`
+    Error     string `json:"error,omitempty"`
+    Completed bool   `json:"completed"`
+}
+
+// Write — called from background goroutine
+func (s *CollectionStatus) set(step string, progress int) {
+    s.mu.Lock()
+    s.Step = step
+    s.Progress = progress
+    s.mu.Unlock()
+}
+
+// Write — called when goroutine finishes
+func (s *CollectionStatus) finish(err error) {
+    s.mu.Lock()
+    defer s.mu.Unlock()
+    s.Running = false
+    s.Completed = true
+    if err != nil {
+        s.Error = err.Error()
+    }
+}
+
+// Read — called from API handler goroutine
+func (s *CollectionStatus) Read() CollectionStatus {
+    s.mu.RLock()
+    defer s.mu.RUnlock()
+    return CollectionStatus{   // return a VALUE copy — safe to use without lock
+        Running:   s.Running,
+        Progress:  s.Progress,
+        Step:      s.Step,
+        Error:     s.Error,
+        Completed: s.Completed,
+    }
+}
+</code></pre>
+<br>
+<h2>8.6 Channels — Brief Introduction</h2>
+<br>
+<p>Channels are typed conduits for goroutine communication:</p>
+<br>
+<pre><code class="language-go">
+ch := make(chan int)         // unbuffered channel
+ch := make(chan string, 10)  // buffered channel (capacity 10)
+
+// Send (blocks if channel is full/no receiver)
+go func() { ch &lt;- 42 }()
+
+// Receive (blocks until something is sent)
+val := &lt;-ch
+
+// Range over channel until closed
+for v := range ch {
+    fmt.Println(v)
+}
+
+// Close a channel (only sender should close)
+close(ch)
+</code></pre>
+<br>
+<blockquote>For the interview: **mutexes** are for protecting shared state; **channels** are for communicating between goroutines. Choose the simpler option.</blockquote>
+<br>
+<hr>
+<br>
+<h1>Chapter 9 — Methods & Receiver Types in Depth</h1>
+<br>
+<h2>9.1 Value Receiver vs Pointer Receiver</h2>
+<br>
+<pre><code class="language-go">
+// Value receiver — operates on a COPY
+func (f FactorResult) String() string {
+    return f.Name   // changes to f don't affect original
+}
+
+// Pointer receiver — operates on the ORIGINAL
+func (f *FactorResult) Validate() error {
+    if f.Metadata == nil {
+        f.Metadata = make(map[string]any)  // modifies original
+    }
+    return nil
+}
+</code></pre>
+<br>
+<p><strong>When to use pointer receivers:</strong></p>
+<p>1. The method <strong>modifies</strong> the receiver</p>
+<p>2. The struct is <strong>large</strong> (avoid copying)</p>
+<p>3. Consistency — if any method uses a pointer receiver, use pointer receivers everywhere for that type</p>
+<br>
+<p><strong>When to use value receivers:</strong></p>
+<p>1. Small structs that don't need modification</p>
+<p>2. Primitive-like types (<code>int</code>, <code>string</code> wrappers)</p>
+<br>
+<p>From <code>models.go</code>:</p>
+<br>
+<pre><code class="language-go">
+// Value receiver — read-only computation, result is returned
+func (m *ManagerInfo) WinRate() float64 {
+    if len(m.Results) == 0 {
+        return 0.0
+    }
+    wins := 0
+    for _, r := range m.Results {
+        if r == "W" {
+            wins++
+        }
+    }
+    return float64(wins) / float64(len(m.Results))
+}
+
+// Pointer receiver — reads shared struct data
+func (h *H2HRecord) HomeWins() int {
+    count := 0
+    for _, r := range h.Results {
+        if r.HomeScore &gt; r.AwayScore {
+            count++
+        }
+    }
+    return count
+}
+
+// Pointer receiver — modifies struct
+func (f *FactorResult) Validate() error {
+    // ...
+    if f.Metadata == nil {
+        f.Metadata = make(map[string]any)  // mutation
+    }
+    return nil
+}
+</code></pre>
+<br>
+<h2>9.2 The Full Prediction Pipeline — Method Chaining</h2>
+<br>
+<p>Tracing <code>PredictionEngine.Predict()</code> shows how methods chain together in production Go:</p>
+<br>
+<pre><code class="language-go">
+// From algorithm.go — the full prediction pipeline as method calls
+func (e *PredictionEngine) Predict(data *domain.MatchData) (*domain.PredictionResult, error) {
+    // Guard clause
+    if data == nil {
+        return nil, fmt.Errorf("match data is required")
+    }
+
+    // Step 1: Build context
+    ctxBuilder := mctx.NewMatchContextBuilder(e.historicalData)   // constructor
+    matchCtx := ctxBuilder.BuildContext(data)                      // method call
+
+    // Step 2: Calculate all 17 factors
+    factors := e.calculateAllFactors(data, matchCtx)              // method call
+
+    // Step 3: Weighted probabilities
+    rawProbs := e.calculateWeightedProbabilities(factors)         // method call
+
+    // Step 4: Market odds blending (if available)
+    if data.HomeOdds &gt; 0 &amp;&amp; data.DrawOdds &gt; 0 &amp;&amp; data.AwayOdds &gt; 0 {
+        marketProbs := oddsToProbs(data.HomeOdds, data.DrawOdds, data.AwayOdds)
+        dataQuality := e.assessDataQuality(data)
+        modelWeight := 0.40 + dataQuality*0.30
+        rawProbs = blendProbabilities(marketProbs, rawProbs, modelWeight)
+    }
+
+    // Step 5: Poisson blend (football: 60% Poisson + 40% weighted factors)
+    var blended domain.Probabilities
+    if e.sport == "football" {
+        poissonProbs := e.calculatePoissonProbabilities(data, factors)
+        blended = blendProbabilities(rawProbs, poissonProbs, 0.60)
+    } else {
+        blended = rawProbs
+    }
+
+    // Step 6: Platt scaling calibration
+    calibrated := e.calibrateProbabilities(blended)
+
+    // Step 7: Confidence score
+    confidence := e.calculateConfidence(factors, calibrated)
+
+    // Step 8: Betting recommendation
+    recommendation := e.generateRecommendation(
+        calibrated, confidence, data.HomeOdds, data.DrawOdds, data.AwayOdds,
+    )
+
+    // Step 9: Build result
+    return &amp;domain.PredictionResult{
+        HomeTeam: data.HomeTeam,
+        AwayTeam: data.AwayTeam,
+        Probabilities: domain.Probabilities{
+            Home: round4(calibrated.Home),
+            Draw: round4(calibrated.Draw),
+            Away: round4(calibrated.Away),
+        },
+        Confidence:     round4(confidence),
+        Recommendation: recommendation,
+        Factors:        factors,
+        Timestamp:      time.Now().Format(time.RFC3339),
+    }, nil
+}
+</code></pre>
+<br>
+<h2>9.3 Helper Functions (Package-Level)</h2>
+<br>
+<p>Go functions don't have to be methods on a type. Package-level functions are fine and common:</p>
+<br>
+<pre><code class="language-go">
+// From algorithm.go — package-level helpers
+func round4(f float64) float64 { return math.Round(f*10000) / 10000 }
+func round2(f float64) float64 { return math.Round(f*100) / 100 }
+
+func cloneWeights(w map[string]float64) map[string]float64 {
+    out := make(map[string]float64, len(w))
+    for k, v := range w {
+        out[k] = v
+    }
+    return out
+}
+</code></pre>
+<br>
+<hr>
+<br>
+<h1>Chapter 10 — Working with the Standard Library</h1>
+<br>
+<p>Go's standard library is rich and deliberately used in this project. Let's trace the most common packages.</p>
+<br>
+<h2>10.1 `fmt` — Formatted I/O</h2>
+<br>
+<pre><code class="language-go">
+import "fmt"
+
+// Print
+fmt.Println("hello world")               // with newline
+fmt.Printf("Elo: %.1f\n", 1542.3)        // formatted, %T = type, %v = any
+fmt.Sprintf("match: %s vs %s", h, a)     // return string (don't print)
+fmt.Fprintf(os.Stderr, "error: %v", err) // write to any io.Writer
+
+// Error creation
+err := fmt.Errorf("open %s: %w", path, originalErr)  // %w wraps for errors.Is()
+</code></pre>
+<br>
+<h2>10.2 `os` — Operating System Interface</h2>
+<br>
+<pre><code class="language-go">
+import "os"
+
+// File I/O (from storage/csv.go)
+f, err := os.Open("data.csv")     // open for reading
+f, err := os.Create("out.csv")    // create/truncate for writing
+defer f.Close()
+
+// Directory creation (from storage/csv.go)
+err = os.MkdirAll("data/exports", 0o755)  // create all directories, like mkdir -p
+
+// File info
+info, err := os.Stat("data.csv")
+if os.IsNotExist(err) { ... }
+</code></pre>
+<br>
+<h2>10.3 `encoding/csv` — CSV Read/Write</h2>
+<br>
+<p>From <code>storage/csv.go</code> — complete CSV round-trip:</p>
+<br>
+<pre><code class="language-go">
+import "encoding/csv"
+
+// READING
+func parseMatchCSV(r io.Reader) ([]MatchRecord, error) {
+    reader := csv.NewReader(r)
+    reader.LazyQuotes = true       // tolerate messy CSV
+    reader.TrimLeadingSpace = true
+
+    header, err := reader.Read()   // read first row as header
+    if err != nil {
+        return nil, fmt.Errorf("read header: %w", err)
+    }
+
+    // Build column name → index map
+    colIdx := make(map[string]int)
+    for i, name := range header {
+        colIdx[strings.TrimSpace(name)] = i
+    }
+
+    var records []MatchRecord
+    for {
+        row, err := reader.Read()
+        if err == io.EOF {   // EOF is NOT an error — it means we're done
+            break
+        }
+        if err != nil {
+            return nil, fmt.Errorf("read row: %w", err)
+        }
+        // parse row into MatchRecord...
+        records = append(records, rec)
+    }
+    return records, nil
+}
+
+// WRITING
+func (s *CSVStore) WriteHistoricalData(filename string, records []MatchRecord) error {
+    f, err := os.Create(path)
+    if err != nil {
+        return fmt.Errorf("create %s: %w", path, err)
+    }
+    defer f.Close()
+
+    w := csv.NewWriter(f)
+    defer w.Flush()   // flush buffered data to file
+
+    header := []string{"Date", "HomeTeam", "AwayTeam", "HomeGoals", ...}
+    if err := w.Write(header); err != nil {
+        return fmt.Errorf("write header: %w", err)
+    }
+
+    for _, r := range records {
+        row := []string{
+            r.Date, r.HomeTeam, r.AwayTeam,
+            strconv.Itoa(r.HomeGoals),     // int → string
+            formatFloat(r.HomeOdds),        // float64 → string
+        }
+        if err := w.Write(row); err != nil {
+            return fmt.Errorf("write row: %w", err)
+        }
+    }
+    return nil
+}
+</code></pre>
+<br>
+<h2>10.4 `encoding/json` — JSON Serialization</h2>
+<br>
+<pre><code class="language-go">
+import "encoding/json"
+
+// Marshal (Go → JSON)
+result := &amp;PredictionResult{HomeTeam: "Arsenal", ...}
+b, err := json.Marshal(result)
+jsonStr := string(b)
+
+// Marshal with pretty-print
+b, err := json.MarshalIndent(result, "", "  ")
+
+// Unmarshal (JSON → Go)
+var data MatchData
+err := json.Unmarshal([]byte(jsonStr), &amp;data)  // note: pass pointer
+
+// From data/fixtures.go — decode JSON API response
+resp, err := http.Get(url)
+defer resp.Body.Close()
+
+var fixtures []FixtureResponse
+err = json.NewDecoder(resp.Body).Decode(&amp;fixtures)
+</code></pre>
+<br>
+<h2>10.5 `net/http` — HTTP Client</h2>
+<br>
+<p>From <code>data/collector.go</code>:</p>
+<br>
+<pre><code class="language-go">
+import "net/http"
+
+// Create client with timeout (always set a timeout!)
+httpClient := &amp;http.Client{Timeout: 30 * time.Second}
+
+// Simple GET request
+resp, err := httpClient.Get(url)
+if err != nil {
+    return nil, fmt.Errorf("GET %s: %w", url, err)
+}
+defer resp.Body.Close()                  // always close the body
+
+if resp.StatusCode != http.StatusOK {
+    return nil, fmt.Errorf("unexpected status %d", resp.StatusCode)
+}
+
+// Read body
+body, err := io.ReadAll(resp.Body)
+
+// POST request
+payload := strings.NewReader(`{"key": "value"}`)
+resp, err := httpClient.Post(url, "application/json", payload)
+</code></pre>
+<br>
+<h2>10.6 `strconv` — String Conversions</h2>
+<br>
+<pre><code class="language-go">
+import "strconv"
+
+// int ↔ string
+s := strconv.Itoa(42)          // int → string: "42"
+n, err := strconv.Atoi("42")  // string → int
+
+// float64 ↔ string (from storage/csv.go)
+s := strconv.FormatFloat(3.14, 'f', -1, 64)  // float → string
+f, err := strconv.ParseFloat("3.14", 64)       // string → float64
+
+// bool ↔ string
+s := strconv.FormatBool(true)    // "true"
+b, err := strconv.ParseBool("1") // "1","t","T","true","TRUE" → true
+</code></pre>
+<br>
+<h2>10.7 `strings` — String Utilities</h2>
+<br>
+<pre><code class="language-go">
+import "strings"
+
+strings.TrimSpace("  hello  ")       // "hello"
+strings.ToLower("ARSENAL")           // "arsenal"
+strings.ToUpper("arsenal")           // "ARSENAL"
+strings.Contains("hello", "ell")     // true
+strings.HasPrefix("football", "foo") // true
+strings.HasSuffix("football", "all") // true
+strings.Split("W,D,L", ",")         // ["W", "D", "L"]
+strings.Join([]string{"W","D"}, ",") // "W,D"
+strings.Replace("a-b-c", "-", "_", -1) // "a_b_c" (-1 = all)
+strings.LastIndex("a/b/c", "/")      // 3
+
+// From storage/csv.go:
+dir := path[:strings.LastIndex(path, "/")]  // extract directory
+</code></pre>
+<br>
+<h2>10.8 `math` — Mathematical Functions</h2>
+<br>
+<pre><code class="language-go">
+import "math"
+
+math.Abs(-3.14)              // 3.14
+math.Round(3.7)              // 4.0
+math.Floor(3.7)              // 3.0
+math.Ceil(3.2)               // 4.0
+math.Sqrt(16.0)              // 4.0
+math.Pow(2, 10)              // 1024.0
+math.Log(math.E)             // 1.0
+math.Tanh(1.0)               // 0.7616...
+math.Max(3.0, 5.0)           // 5.0
+math.Min(3.0, 5.0)           // 3.0
+math.Exp(1.0)                // e = 2.718...
+math.Pi                      // 3.14159265...
+math.Inf(1)                  // +Infinity
+math.IsNaN(math.NaN())       // true
+
+// From factors.go — math in prediction logic
+xgDiff := homeXG - awayXG
+normalizedDiff := math.Tanh(xgDiff / 2)  // squash to [-1, 1]
+
+// From algorithm.go — Elo formula
+expectedHome := 1.0 / (1.0 + math.Pow(10, (awayElo-homeElo)/400))
+</code></pre>
+<br>
+<h2>10.9 `time` — Time & Duration</h2>
+<br>
+<pre><code class="language-go">
+import "time"
+
+// Current time
+now := time.Now()
+ts := time.Now().Format(time.RFC3339)   // "2026-03-05T14:23:01Z"
+
+// Duration constants
+30 * time.Second
+5 * time.Minute
+24 * time.Hour
+
+// From data/collector.go — HTTP client timeout
+httpClient := &amp;http.Client{Timeout: 30 * time.Second}
+
+// From calibration.go — timestamping records
+if timestamp == "" {
+    timestamp = time.Now().Format(time.RFC3339)
+}
+</code></pre>
+<br>
+<hr>
+<br>
+<h1>Chapter 11 — Design Patterns in Go</h1>
+<br>
+<p>Go idioms produce recognizable patterns. Knowing them signals Go fluency in interviews.</p>
+<br>
+<h2>11.1 Constructor Pattern (Factory)</h2>
+<br>
+<p>Always initialize with a <code>NewXxx()</code> function that validates and sets defaults:</p>
+<br>
+<pre><code class="language-go">
+// Pattern
+func NewXxx(params ...) *Xxx {
+    x := &amp;Xxx{
+        field: defaultValue,
+        map_:  make(map[KeyT]ValT),
+    }
+    // ... configure
+    return x
+}
+
+// From algorithm.go
+func NewPredictionEngine(sport string, useV2Weights bool, enableCalibration bool) *PredictionEngine {
+    e := &amp;PredictionEngine{
+        sport:      sport,
+        eloRatings: make(map[string]float64),
+        calib:      calibParams{a: 1.0, b: 0.0},
+    }
+    e.config = e.loadSportConfig(sport)
+    if useV2Weights &amp;&amp; sport == "football" {
+        e.config.weights = cloneWeights(domain.FootballWeightsV2)
+    }
+    if enableCalibration {
+        e.calibrationEngine = NewCalibrationEngine(0.01, 1000)
+    }
+    return e
+}
+</code></pre>
+<br>
+<h2>11.2 Options/Configuration Pattern (switch-based)</h2>
+<br>
+<p>When a type behaves differently based on sport/mode/config:</p>
+<br>
+<pre><code class="language-go">
+// From algorithm.go
+func (e *PredictionEngine) loadSportConfig(sport string) sportConfig {
+    switch sport {
+    case "basketball":
+        return sportConfig{
+            homeAdvantage: 0.06,
+            baseElo:       1500,
+            kFactor:       20,
+            minConfidence: 0.55,
+            weights: map[string]float64{
+                "offensiveRating": 0.20,
+                "defensiveRating": 0.18,
+                // ...
+            },
+        }
+    case "tennis":
+        return sportConfig{
+            minConfidence: 0.60,
+            weights: map[string]float64{
+                "surfacePerformance": 0.25,
+                // ...
+            },
+        }
+    default: // football
+        return sportConfig{
+            homeAdvantage:  0.10,
+            baseElo:        1500,
+            kFactor:        32,
+            drawThreshold:  0.25,
+            minConfidence:  0.55,
+            maxGoalsLambda: 4.0,
+            weights:        cloneWeights(domain.FootballWeightsV1),
+        }
+    }
+}
+</code></pre>
+<br>
+<h2>11.3 Pipeline Pattern (Sequential Processing)</h2>
+<br>
+<p>The 7-step data enrichment pipeline:</p>
+<br>
+<pre><code class="language-go">
+// From data/collector.go — conceptual pipeline
+func (c *HistoricalDataCollector) runPipeline(
+    ctx context.Context,
+    seasons, leagues []string,
+    status *CollectionStatus,
+) error {
+    // Step 1: Fetch raw CSV data
+    status.set("Fetching match data", 10)
+    records, err := c.fetchRawData(ctx, seasons, leagues)
+    if err != nil {
+        return fmt.Errorf("step 1 fetch: %w", err)
+    }
+
+    // Step 2: Add xG estimates
+    status.set("Calculating expected goals", 25)
+    records = c.addExpectedGoals(records)
+
+    // Step 3: Calculate Elo ratings
+    status.set("Calculating Elo ratings", 40)
+    records = c.calculateEloRatings(records)
+
+    // Step 4: Calculate form strings
+    status.set("Calculating form", 55)
+    records = c.calculateForm(records)
+
+    // Step 5: Rest and congestion
+    status.set("Calculating rest/fatigue", 65)
+    records = c.calculateRestCongestion(records)
+
+    // Step 6: Advanced stats
+    status.set("Calculating advanced stats", 78)
+    records = c.calculateAdvancedStats(records)
+
+    // Step 7: League positions
+    status.set("Calculating league positions", 90)
+    records = c.calculateLeaguePositions(records)
+
+    // Store result
+    status.set("Saving data", 95)
+    return c.store.WriteHistoricalData("historical.csv", records)
+}
+</code></pre>
+<br>
+<h2>11.4 Strategy Pattern (Pluggable Algorithms)</h2>
+<br>
+<p>17 factor functions with the same signature — interchangeable strategies:</p>
+<br>
+<pre><code class="language-go">
+// From factors.go — each factor follows the same pattern:
+// takes *MatchData and/or *MatchContext, returns a result
+
+func (e *PredictionEngine) calculateExpectedGoals(data *domain.MatchData) map[string]interface{}
+func (e *PredictionEngine) calculateAdvancedStats(data *domain.MatchData) map[string]interface{}
+func (e *PredictionEngine) calculateTeamStrength(data *domain.MatchData) map[string]interface{}
+// ...
+
+// All assembled in one place:
+func (e *PredictionEngine) calculateAllFactors(
+    data *domain.MatchData,
+    ctx *domain.MatchContext,
+) map[string]interface{} {
+    factors := make(map[string]interface{}, 17)
+
+    factors["expectedGoals"]          = e.calculateExpectedGoals(data)
+    factors["advancedStats"]          = e.calculateAdvancedStats(data)
+    factors["teamStrength"]           = e.calculateTeamStrength(data)
+    factors["tacticalMatchup"]        = e.calculateTacticalMatchup(data)
+    factors["currentForm"]            = e.calculateCurrentForm(data)
+    factors["playerImpact"]           = e.calculatePlayerImpact(data)
+    factors["restAndFatigue"]         = e.calculateRestFatigue(data)
+    factors["motivation"]             = e.calculateMotivation(data)
+    factors["homeAdvantage"]          = e.calculateHomeAdvantage(data)
+    factors["externalFactors"]        = e.calculateExternalFactors(data)
+    factors["teamQualityGap"]         = e.calculateTeamQualityGap(data)
+
+    h2hHist, h2hAnom := e.calculateH2HFactors(data, ctx)
+    factors["h2hHistorical"]          = h2hHist
+    factors["h2hAnomaly"]             = h2hAnom
+    factors["possessionQuality"]      = e.calculatePossessionQuality(data, ctx)
+    factors["managerMomentum"]        = e.calculateManagerMomentum(data, ctx)
+    factors["relegationMotivation"]   = e.calculateRelegationMotivation(data, ctx)
+    factors["counterAttackEfficiency"]= e.calculateCounterAttackEfficiency(data, ctx)
+    factors["awayDrawFrequency"]      = e.calculateAwayDrawFrequency(data, ctx)
+
+    return factors
+}
+</code></pre>
+<br>
+<h2>11.5 Repository Pattern (Data Access)</h2>
+<br>
+<pre><code class="language-go">
+// The CSVStore acts as a repository — abstracts data access
+type CSVStore struct {
+    DataDir string
+}
+
+func NewCSVStore(dataDir string) *CSVStore { ... }
+func (s *CSVStore) ReadHistoricalData(filename string) ([]MatchRecord, error) { ... }
+func (s *CSVStore) WriteHistoricalData(filename string, records []MatchRecord) error { ... }
+func (s *CSVStore) Exists(filename string) bool { ... }
+
+// Usage — caller doesn't care how data is stored
+store := storage.NewCSVStore("./data")
+records, err := store.ReadHistoricalData("epl_2425.csv")
+</code></pre>
+<br>
+<h2>11.6 Functional Options Pattern (Advanced)</h2>
+<br>
+<p>A clean way to handle optional configuration without a large parameter list:</p>
+<br>
+<pre><code class="language-go">
+// The functional options pattern (common in Go libraries)
+type Option func(*PredictionEngine)
+
+func WithCalibration(rate float64, maxHistory int) Option {
+    return func(e *PredictionEngine) {
+        e.calibrationEngine = NewCalibrationEngine(rate, maxHistory)
+    }
+}
+
+func WithV2Weights() Option {
+    return func(e *PredictionEngine) {
+        e.config.weights = cloneWeights(domain.FootballWeightsV2)
+    }
+}
+
+func NewEngine(sport string, opts ...Option) *PredictionEngine {
+    e := &amp;PredictionEngine{sport: sport, eloRatings: make(map[string]float64)}
+    for _, opt := range opts {
+        opt(e)  // apply each option
+    }
+    return e
+}
+
+// Usage
+engine := NewEngine("football",
+    WithCalibration(0.01, 1000),
+    WithV2Weights(),
+)
+</code></pre>
+<br>
+<hr>
+<br>
+<h1>Chapter 12 — Testing in Go</h1>
+<br>
+<h2>12.1 Test File Convention</h2>
+<br>
+<p>Test files end in <code>_test.go</code>. Go automatically finds them during <code>go test</code>:</p>
+<br>
+<pre><code class="language-text">
+internal/domain/
+├── models.go           ← production code
+└── models_test.go      ← tests (same package: package domain)
+</code></pre>
+<br>
+<h2>12.2 Basic Test Function</h2>
+<br>
+<pre><code class="language-go">
+// models_test.go
+package domain
+
+import "testing"
+
+func TestFactorResultValidate(t *testing.T) {
+    // Arrange
+    f := FactorResult{
+        Name:       "expectedGoals",
+        Value:      0.65,
+        Weight:     0.12,
+        Confidence: 80,
+    }
+
+    // Act
+    err := f.Validate()
+
+    // Assert
+    if err != nil {
+        t.Errorf("expected no error, got: %v", err)
+    }
+}
+
+func TestFactorResultValidate_InvalidValue(t *testing.T) {
+    f := FactorResult{Value: 1.5}  // out of range
+    err := f.Validate()
+    if err == nil {
+        t.Error("expected error for value &gt; 1.0, got nil")
+    }
+}
+</code></pre>
+<br>
+<h2>12.3 Table-Driven Tests</h2>
+<br>
+<p>The canonical Go testing pattern — loop over test cases:</p>
+<br>
+<pre><code class="language-go">
+func TestH2HRecordWinRate(t *testing.T) {
+    tests := []struct {
+        name        string
+        results     []H2HResult
+        perspective string
+        want        float64
+    }{
+        {
+            name: "home wins 2 of 4",
+            results: []H2HResult{
+                {HomeScore: 2, AwayScore: 1},  // home win
+                {HomeScore: 0, AwayScore: 1},  // away win
+                {HomeScore: 1, AwayScore: 0},  // home win
+                {HomeScore: 1, AwayScore: 1},  // draw
+            },
+            perspective: "home",
+            want:        0.5,
+        },
+        {
+            name:        "empty results",
+            results:     []H2HResult{},
+            perspective: "home",
+            want:        0.0,
+        },
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            h := &amp;H2HRecord{Results: tt.results}
+            got := h.WinRate(tt.perspective)
+            if got != tt.want {
+                t.Errorf("WinRate() = %.2f, want %.2f", got, tt.want)
+            }
+        })
+    }
+}
+</code></pre>
+<br>
+<h2>12.4 Test Helpers & `t.Helper()`</h2>
+<br>
+<pre><code class="language-go">
+func assertNoError(t *testing.T, err error) {
+    t.Helper()   // marks this as a helper — errors point to the caller, not here
+    if err != nil {
+        t.Fatalf("unexpected error: %v", err)
+    }
+}
+
+func assertEqual(t *testing.T, got, want interface{}) {
+    t.Helper()
+    if got != want {
+        t.Errorf("got %v, want %v", got, want)
+    }
+}
+</code></pre>
+<br>
+<h2>12.5 Running Tests</h2>
+<br>
+<pre><code class="language-bash">
+go test ./...                     # run all tests
+go test ./internal/domain/...     # run domain package tests
+go test -v ./...                  # verbose output
+go test -run TestH2H ./...        # run tests matching regex
+go test -count=1 ./...            # disable test caching
+go test -race ./...               # enable data race detector (CRITICAL for concurrent code)
+go test -cover ./...              # show test coverage
+go test -bench=. ./...            # run benchmarks
+</code></pre>
+<br>
+<blockquote>`go test -race` is mandatory before any code with goroutines goes to production.</blockquote>
+<br>
+<h2>12.6 Benchmarks</h2>
+<br>
+<pre><code class="language-go">
+func BenchmarkPredictionEngine(b *testing.B) {
+    engine := NewPredictionEngine("football", true, false)
+    data := &amp;domain.MatchData{
+        HomeTeam: "Arsenal",
+        AwayTeam: "Chelsea",
+        HomeXG:   1.8,
+        AwayXG:   1.2,
+    }
+
+    b.ResetTimer()  // don't count setup time
+    for i := 0; i &lt; b.N; i++ {
+        engine.Predict(data)  // b.N automatically chosen for reliable timing
+    }
+}
+</code></pre>
+<br>
+<hr>
+<br>
+<h1>Appendix A — Go Cheat Sheet</h1>
+<br>
+<h2>Variable Declaration</h2>
+<pre><code class="language-go">
+x := 42                    // short declaration (inside function)
+var y float64 = 3.14       // explicit type
+const Pi = 3.14159         // constant
+</code></pre>
+<br>
+<h2>Control Flow</h2>
+<pre><code class="language-go">
+// if
+if x &gt; 0 {
+    // ...
+} else if x &lt; 0 {
+    // ...
+} else {
+    // ...
+}
+
+// if with initialization
+if err := doSomething(); err != nil {
+    return err
+}
+
+// for (the only loop in Go)
+for i := 0; i &lt; 10; i++ { }           // C-style
+for condition { }                      // while-style
+for { }                                // infinite loop
+for i, v := range slice { }           // range over slice
+for k, v := range map_ { }            // range over map
+for v := range channel { }            // range over channel
+
+// switch (no fallthrough by default)
+switch x {
+case 1:
+    // ...
+case 2, 3:
+    // ...
+default:
+    // ...
+}
+</code></pre>
+<br>
+<h2>Functions</h2>
+<pre><code class="language-go">
+func name(a, b int) (int, error) {
+    return a + b, nil
+}
+
+// Variadic
+func sum(nums ...int) int {
+    total := 0
+    for _, n := range nums {
+        total += n
+    }
+    return total
+}
+
+// Anonymous / closure
+fn := func(x int) int { return x * 2 }
+go func() { /* goroutine */ }()
+</code></pre>
+<br>
+<h2>Structs & Methods</h2>
+<pre><code class="language-go">
+type Point struct {
+    X, Y float64
+}
+
+// Value receiver (read-only)
+func (p Point) Distance() float64 {
+    return math.Sqrt(p.X*p.X + p.Y*p.Y)
+}
+
+// Pointer receiver (modifies or large struct)
+func (p *Point) Scale(factor float64) {
+    p.X *= factor
+    p.Y *= factor
+}
+</code></pre>
+<br>
+<h2>Interfaces</h2>
+<pre><code class="language-go">
+type Writer interface {
+    Write(data []byte) (int, error)
+}
+
+// Implement by having the method — no declaration needed
+type MyWriter struct{}
+func (w MyWriter) Write(data []byte) (int, error) { ... }
+</code></pre>
+<br>
+<h2>Error Handling</h2>
+<pre><code class="language-go">
+result, err := doSomething()
+if err != nil {
+    return fmt.Errorf("context: %w", err)
+}
+</code></pre>
+<br>
+<h2>Slices</h2>
+<pre><code class="language-go">
+s := []int{1, 2, 3}
+s = append(s, 4)
+sub := s[1:3]          // [2, 3]
+for i, v := range s { }
+</code></pre>
+<br>
+<h2>Maps</h2>
+<pre><code class="language-go">
+m := make(map[string]int)
+m["key"] = 42
+v, ok := m["key"]      // comma-ok
+delete(m, "key")
+for k, v := range m { }
+</code></pre>
+<br>
+<h2>Goroutines & Sync</h2>
+<pre><code class="language-go">
+go func() { ... }()    // launch goroutine
+
+var mu sync.Mutex
+mu.Lock()
+defer mu.Unlock()
+
+var rw sync.RWMutex
+rw.RLock()             // multiple readers OK
+defer rw.RUnlock()
+</code></pre>
+<br>
+<h2>Defer</h2>
+<pre><code class="language-go">
+defer f.Close()        // runs when function returns (LIFO order)
+defer mu.Unlock()      // always unlock even on error
+</code></pre>
+<br>
+<hr>
+<br>
+<h1>Appendix B — Interview Q&A</h1>
+<br>
+<hr>
+<br>
+<p><strong>Q: What is the difference between a goroutine and a thread?</strong></p>
+<br>
+<p>A: An OS thread is managed by the operating system — each costs ~1MB of stack and requires a kernel context switch. A goroutine is managed by the Go runtime — it starts with ~2KB of stack (grows dynamically), and context switching happens in user space via cooperative/preemptive scheduling on a small pool of OS threads. You can run millions of goroutines; millions of threads would crash the system.</p>
+<br>
+<hr>
+<br>
+<p><strong>Q: How does Go handle null/nil?</strong></p>
+<br>
+<p>A: Go has no <code>null</code> — it has <code>nil</code>, which only applies to pointer types, slices, maps, channels, functions, and interfaces. Every other type has a zero value (<code>0</code>, <code>""</code>, <code>false</code>, struct with all-zero fields). This prevents many null pointer exceptions. The zero value contract means every variable is always initialized, so you never use uninitialized memory.</p>
+<br>
+<hr>
+<br>
+<p><strong>Q: Explain Go's interface system.</strong></p>
+<br>
+<p>A: Go interfaces are <strong>implicitly satisfied</strong> — if a type has all the methods an interface requires, it satisfies the interface without any declaration. There's no <code>implements</code> keyword. This is called structural typing (or duck typing with static checking). It enables decoupling: you can define an interface in the consuming package, and any existing type that happens to have the right methods works automatically — even from external libraries.</p>
+<br>
+<hr>
+<br>
+<p><strong>Q: What is defer?</strong></p>
+<br>
+<p>A: <code>defer</code> schedules a function call to run at the end of the surrounding function, regardless of how the function returns (normal, panic, or error). Multiple defers run in LIFO order. Primary use: resource cleanup — <code>defer f.Close()</code>, <code>defer mu.Unlock()</code>, <code>defer resp.Body.Close()</code>. It prevents resource leaks even in error paths.</p>
+<br>
+<hr>
+<br>
+<p><strong>Q: How does Go handle errors vs exceptions?</strong></p>
+<br>
+<p>A: Go has no exceptions. Functions return errors as explicit values — typically the last return value <code>(Result, error)</code>. Callers must explicitly handle or propagate errors: <code>if err != nil { return err }</code>. This makes error handling visible at every call site, which improves code clarity and prevents silent failures. The <code>panic</code>/<code>recover</code> mechanism exists but is reserved for truly unrecoverable situations (not for normal error flow).</p>
+<br>
+<hr>
+<br>
+<p><strong>Q: What is the difference between a slice and an array?</strong></p>
+<br>
+<p>A: An array has a <strong>fixed size</strong> baked into its type: <code>[5]int</code> is different from <code>[6]int</code>. Arrays are value types — assigning copies all elements. A slice is a <strong>dynamic view</strong> over an underlying array: it has a pointer, length, and capacity. Slices are reference types — assigning a slice just copies the descriptor; the underlying data is shared. In practice, you almost always use slices in Go; arrays are rare.</p>
+<br>
+<hr>
+<br>
+<p><strong>Q: When do you use a pointer receiver vs value receiver?</strong></p>
+<br>
+<p>A: <strong>Pointer receiver</strong> when the method modifies the receiver, the struct is large (avoid copying cost), or for consistency (if any method uses a pointer receiver, use pointer receivers everywhere for that type). <strong>Value receiver</strong> for small read-only types, or types that are inherently immutable values. If in doubt, use pointer receivers — they're safer and more consistent.</p>
+<br>
+<hr>
+<br>
+<p><strong>Q: What is <code>make</code> vs <code>new</code>?</strong></p>
+<br>
+<p>A: <code>new(T)</code> allocates memory for type T, initializes it to its zero value, and returns a <code>*T</code>. <code>make(T, ...)</code> is specifically for slices, maps, and channels — it allocates AND initializes the internal data structures needed to use them. You almost never use <code>new</code> — use struct literals or <code>NewXxx()</code> constructors instead. You always use <code>make</code> for maps and channels before writing to them.</p>
+<br>
+<hr>
+<br>
+<p><strong>Q: What is the <code>internal</code> package?</strong></p>
+<br>
+<p>A: A directory named <code>internal</code> creates a visibility boundary. Packages inside <code>internal/</code> can only be imported by code rooted at the parent directory. External projects cannot import your internal packages. The bet4me project uses <code>internal/</code> for all its packages — enforcing that external consumers can only use whatever is exported from the root or cmd packages.</p>
+<br>
+<hr>
+<br>
+<p><strong>Q: How do you handle concurrency safely?</strong></p>
+<br>
+<p>A: Two main tools: (1) <strong>Mutexes</strong> (<code>sync.Mutex</code>, <code>sync.RWMutex</code>) for protecting shared state — any struct with mutable fields accessed by multiple goroutines needs a mutex, and methods acquire/release it with <code>Lock()</code>/<code>Unlock()</code>. (2) <strong>Channels</strong> for communication — pass data between goroutines without shared memory. The Go proverb: "Do not communicate by sharing memory; share memory by communicating." Use the simpler option: mutexes for state protection, channels for signaling or sending values.</p>
+<br>
+<hr>
+<br>
+<p><strong>Q: What is the <code>context</code> package?</strong></p>
+<br>
+<p>A: <code>context.Context</code> is a standard way to carry deadlines, cancellation signals, and request-scoped values across API boundaries and goroutines. You pass it as the <strong>first parameter</strong> of any function that does I/O or could block. <code>context.WithTimeout(ctx, 30*time.Second)</code> creates a context that automatically cancels after 30 seconds, causing all downstream HTTP calls, database queries, etc. to abort. From <code>data/collector.go</code>: <code>StartCollection(ctx context.Context, ...)</code>.</p>
+<br>
+<hr>
+<br>
+<p><strong>Q: What is the Kelly Criterion?</strong></p>
+<br>
+<p>A: (Bonus — relevant to this codebase) The Kelly Criterion is a formula for optimal bet sizing: <code>f = (b*p - q) / b</code> where <code>f</code> is the fraction of bankroll to bet, <code>b</code> is the net odds, <code>p</code> is the probability of winning, and <code>q = 1 - p</code>. Betting full Kelly maximizes long-run growth rate but is volatile; practitioners use fractional Kelly (e.g., 25% of Kelly) to reduce variance. The bet4me engine calculates Kelly stakes in <code>probs.go</code>.</p>
+<br>
+<hr>
+<br>
+<p>*End of Go Crash Course — Good luck on Wednesday!*</p>
+<br>
+<hr>
+<br>
+<blockquote>**Reference codebase:** `github.com/bet4me/betting-algorithm-go`</blockquote>
+<blockquote>**Go version:** 1.23.6</blockquote>
+<blockquote>**Document generated:** March 2026</blockquote>
+<br>
+</body>
+</html>

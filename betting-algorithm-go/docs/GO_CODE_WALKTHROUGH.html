@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go Code Walkthrough — bet4me End-to-End Prediction Flow</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg:          #0f1117;
+    --surface:     #161b27;
+    --surface2:    #1e2536;
+    --surface3:    #252d40;
+    --border:      #2a3350;
+    --border2:     #354060;
+    --text:        #e2e8f0;
+    --text-muted:  #8896b3;
+    --text-dim:    #5a6882;
+    --accent:      #4f8ef7;
+    --accent2:     #7c3aed;
+    --green:       #22c55e;
+    --amber:       #f59e0b;
+    --red:         #ef4444;
+    --teal:        #14b8a6;
+    --pink:        #ec4899;
+    --code-bg:     #0d1117;
+    --code-border: #1e2736;
+
+    /* syntax */
+    --s-kw:   #c084fc;   /* keywords */
+    --s-fn:   #60a5fa;   /* functions */
+    --s-str:  #86efac;   /* strings */
+    --s-cm:   #4b5563;   /* comments */
+    --s-tp:   #f87171;   /* types */
+    --s-nu:   #fb923c;   /* numbers */
+    --s-pk:   #34d399;   /* package names */
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--text);
+    background: var(--bg);
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 32px 40px 80px;
+  }
+
+  /* ─── Typography ─── */
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.4px;
+    margin: 48px 0 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  h1:first-of-type { margin-top: 0; }
+
+  h2 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 28px 0 8px;
+  }
+
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #c4cfdf;
+    margin: 20px 0 6px;
+  }
+
+  p { margin: 7px 0; color: var(--text-muted); }
+  ul, ol { margin: 8px 0 8px 22px; }
+  li { margin: 4px 0; color: var(--text-muted); }
+  strong { color: var(--text); font-weight: 600; }
+
+  a { color: var(--accent); text-decoration: none; }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 36px 0;
+  }
+
+  /* ─── Code ─── */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin: 12px 0;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    page-break-inside: avoid;
+  }
+  pre code { background: transparent; color: #cdd6f4; padding: 0; font-size: 11.5px; }
+  code {
+    background: var(--surface2);
+    color: #f87171;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+    font-size: 11px;
+    border: 1px solid var(--border);
+  }
+  pre code { border: none; color: inherit; }
+
+  /* syntax colours */
+  .kw  { color: var(--s-kw); }
+  .fn  { color: var(--s-fn); }
+  .st  { color: var(--s-str); }
+  .cm  { color: var(--s-cm); font-style: italic; }
+  .tp  { color: var(--s-tp); }
+  .nu  { color: var(--s-nu); }
+  .pk  { color: var(--s-pk); }
+
+  /* ─── Cover ─── */
+  .cover {
+    background: linear-gradient(135deg, #111827 0%, #1a1040 50%, #0f172a 100%);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    padding: 56px 48px;
+    margin-bottom: 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 280px; height: 280px;
+    background: radial-gradient(circle, rgba(79,142,247,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: -40px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(124,58,237,0.10) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .cover-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    margin-bottom: 10px;
+  }
+  .cover h1 {
+    font-size: 38px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -1px;
+    border: none;
+    margin: 0 0 10px;
+    line-height: 1.1;
+  }
+  .cover-sub {
+    font-size: 16px;
+    color: var(--text-muted);
+    margin: 0 0 24px;
+  }
+  .cover-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(79,142,247,0.12);
+    border: 1px solid rgba(79,142,247,0.3);
+    color: var(--accent);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .cover-meta {
+    margin-top: 28px;
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .cover-meta span::before { content: '◆ '; color: var(--accent); font-size: 8px; }
+
+  /* ─── Step header ─── */
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-left: 4px solid var(--accent);
+    border-radius: 10px;
+    padding: 14px 20px;
+    margin: 36px 0 16px;
+    page-break-inside: avoid;
+  }
+  .step-header.green { border-left-color: var(--green); }
+  .step-num {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    font-weight: 800;
+    font-size: 15px;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .step-header.green .step-num { background: linear-gradient(135deg, var(--green), var(--teal)); }
+  .step-meta { flex: 1; }
+  .step-title { font-size: 15px; font-weight: 700; color: #fff; }
+  .step-file  { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+  .step-file code { background: transparent; color: var(--text-dim); border: none; padding: 0; font-size: 11px; }
+
+  /* ─── Tags ─── */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; }
+  .tag {
+    background: var(--surface2);
+    color: #7eb3f7;
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ─── Callout boxes ─── */
+  .callout {
+    border-radius: 8px;
+    padding: 10px 14px 10px 42px;
+    margin: 12px 0;
+    font-size: 12.5px;
+    position: relative;
+    line-height: 1.6;
+  }
+  .callout::before {
+    position: absolute;
+    left: 12px;
+    top: 10px;
+    font-size: 16px;
+  }
+  .callout.concept {
+    background: rgba(79,142,247,0.06);
+    border: 1px solid rgba(79,142,247,0.2);
+    color: #a8c4f0;
+  }
+  .callout.concept::before { content: '💡'; }
+  .callout.concept strong { color: #7eb3f7; }
+
+  .callout.tip {
+    background: rgba(34,197,94,0.06);
+    border: 1px solid rgba(34,197,94,0.2);
+    color: #86efac;
+  }
+  .callout.tip::before { content: '✅'; }
+  .callout.tip strong { color: #4ade80; }
+
+  .callout.warn {
+    background: rgba(245,158,11,0.06);
+    border: 1px solid rgba(245,158,11,0.2);
+    color: #fde68a;
+  }
+  .callout.warn::before { content: '⚠️'; }
+  .callout.warn strong { color: #fbbf24; }
+
+  /* ─── Flow diagram ─── */
+  .flow {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    line-height: 1.9;
+    color: var(--text-muted);
+  }
+  .flow .arrow { color: var(--accent); }
+  .flow .label { color: var(--green); font-weight: 600; }
+  .flow .dim   { color: var(--text-dim); }
+
+  /* ─── Tables ─── */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+    font-size: 12px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  th {
+    background: var(--surface2);
+    color: var(--text);
+    font-weight: 600;
+    padding: 9px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border2);
+    font-size: 11.5px;
+  }
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .pattern-table td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #f87171;
+  }
+  .pattern-table td:nth-child(2) { color: var(--text-dim); font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+
+  /* ─── Response JSON preview ─── */
+  .response-box {
+    background: var(--code-bg);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 14px 0;
+  }
+  .response-box .bar {
+    background: var(--surface2);
+    padding: 8px 14px;
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .response-box .bar::before {
+    content: '●';
+    color: var(--green);
+    font-size: 10px;
+  }
+  .response-box pre {
+    border: none;
+    border-radius: 0;
+    margin: 0;
+    border-left: none;
+  }
+
+  /* ─── Inline badge ─── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    vertical-align: middle;
+  }
+  .badge.blue  { background: rgba(79,142,247,0.15); color: #7eb3f7; border: 1px solid rgba(79,142,247,0.3); }
+  .badge.green { background: rgba(34,197,94,0.12);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+
+  /* ─── Section divider ─── */
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 44px 0 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  @media print {
+    body { background: #fff; color: #000; max-width: 100%; padding: 10px 20px; }
+    :root {
+      --bg: #fff; --surface: #f8f9fa; --surface2: #f1f3f5;
+      --text: #111; --text-muted: #333; --text-dim: #666;
+      --border: #ddd; --border2: #ccc; --code-bg: #f6f8fa;
+      --accent: #1d4ed8; --green: #15803d; --amber: #b45309;
+    }
+    pre { font-size: 10px; }
+    .step-header { page-break-before: always; }
+    .cover { page-break-after: always; }
+    @page { margin: 1.2cm; size: A4; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════ COVER ══════════════════════════ -->
+<div class="cover">
+  <div class="cover-eyebrow">Go Skills Demonstration</div>
+  <h1>Code Walkthrough</h1>
+  <div class="cover-sub">End-to-end trace of a single HTTP prediction request through 10 layers of the bet4me codebase</div>
+  <div class="cover-badge">POST /api/predict</div>
+  <div class="cover-meta">
+    <span>10 Steps</span>
+    <span>20 Go Concepts</span>
+    <span>1 Request → 1 JSON Response</span>
+    <span>betting-algorithm-go/</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════ HOW TO USE ══════════════════════════ -->
+<h1>How to Use This Guide</h1>
+
+<p>Each step represents one layer of the codebase. The same request travels through all 10 layers and returns a JSON prediction. For each step: <strong>explain the layer, the Go constructs it uses, and why they were chosen</strong>.</p>
+
+<div class="flow">
+<span class="dim">POST /api/predict { "home_team": "Arsenal", "away_team": "Chelsea", "home_odds": 1.85 }</span>
+<span class="arrow">  ↓</span>
+<span class="label">  Step 1</span>  <span class="dim">cmd/server/main.go</span>         — startup wiring &amp; DI
+<span class="label">  Step 2</span>  <span class="dim">internal/api/server.go</span>     — routing, decode request
+<span class="label">  Step 3</span>  <span class="dim">internal/algorithm/algorithm.go</span>  — 7-step Predict pipeline
+<span class="label">  Step 4</span>  <span class="dim">internal/algorithm/factors.go</span>    — 16 factor calculations
+<span class="label">  Step 5</span>  <span class="dim">internal/context/builder.go</span>      — match context enrichment
+<span class="label">  Step 6</span>  <span class="dim">internal/algorithm/probs.go</span>      — weighted probability model
+<span class="label">  Step 7</span>  <span class="dim">internal/algorithm/poisson.go</span>    — Poisson distribution blend
+<span class="label">  Step 8</span>  <span class="dim">internal/algorithm/calibration.go</span>— thread-safe calibration
+<span class="label">  Step 9</span>  <span class="dim">internal/algorithm/probs.go</span>      — Kelly Criterion stake
+<span class="label">  Step 10</span> <span class="dim">internal/api/server.go</span>     — JSON response
+<span class="arrow">  ↓</span>
+<span class="dim">{ "homeWinProb": 0.4821, "recommendation": { "outcome": "Home Win", "recommendation": "Value Bet" } }</span>
+</div>
+
+<hr>
+
+<!-- ══════════════════════════ STEP 1 ══════════════════════════ -->
+<div class="step-header">
+  <div class="step-num">01</div>
+  <div class="step-meta">
+    <div class="step-title">Entry Point &amp; Dependency Wiring</div>
+    <div class="step-file">cmd/server/main.go</div>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag">package main</span>
+  <span class="tag">manual DI</span>
+  <span class="tag">NewXxx() constructor</span>
+  <span class="tag">os.MkdirAll</span>
+  <span class="tag">log/slog</span>
+  <span class="tag">blank identifier _</span>
+</div>
+
+<p>This file runs <strong>once at startup</strong>, before any HTTP request arrives. It sets up the entire application by creating every component and wiring their dependencies together explicitly.</p>
+
+<h3>Environment loading &amp; structured logging</h3>
+<pre><span class="kw">func</span> <span class="fn">main</span>() {
+    <span class="cm">// _ discards the error — silently OK if .env is missing</span>
+    _ = <span class="pk">godotenv</span>.<span class="fn">Load</span>()
+
+    <span class="cm">// slog = structured logging, Go 1.21+ stdlib. Replaces the old log package.</span>
+    <span class="cm">// &amp;slog.HandlerOptions{...} — struct literal: only set fields you need</span>
+    logger := <span class="pk">slog</span>.<span class="fn">New</span>(<span class="pk">slog</span>.<span class="fn">NewTextHandler</span>(<span class="pk">os</span>.Stdout, &amp;<span class="tp">slog.HandlerOptions</span>{
+        Level: <span class="pk">slog</span>.LevelInfo,
+    }))
+}</pre>
+
+<div class="callout concept">
+  <strong>Blank identifier <code>_</code></strong> — Go requires all declared variables to be used. When you intentionally discard a return value, assign it to <code>_</code>. Signals intent: "I know this has a return value; I don't need it."
+</div>
+
+<h3>Directory setup — range over inline slice literal</h3>
+<pre><span class="kw">for</span> _, dir := <span class="kw">range</span> []<span class="tp">string</span>{
+    <span class="pk">filepath</span>.<span class="fn">Join</span>(dataDir, <span class="st">"final"</span>),
+    <span class="pk">filepath</span>.<span class="fn">Join</span>(dataDir, <span class="st">"backtests"</span>),
+    <span class="pk">filepath</span>.<span class="fn">Join</span>(dataDir, <span class="st">"jackpots"</span>),
+} {
+    <span class="kw">if</span> err := <span class="pk">os</span>.<span class="fn">MkdirAll</span>(dir, <span class="nu">0755</span>); err != <span class="kw">nil</span> {
+        logger.<span class="fn">Warn</span>(<span class="st">"could not create directory"</span>, <span class="st">"dir"</span>, dir, <span class="st">"err"</span>, err)
+    }
+}</pre>
+
+<h3>Manual Dependency Injection</h3>
+<pre><span class="cm">// Every component is created with its dependencies explicitly passed in.</span>
+<span class="cm">// No framework, no magic — you can read the entire dependency graph right here.</span>
+engine     := <span class="pk">algorithm</span>.<span class="fn">NewPredictionEngine</span>(<span class="st">"football"</span>, <span class="kw">true</span>, <span class="kw">false</span>)
+collector  := <span class="pk">data</span>.<span class="fn">NewHistoricalDataCollector</span>(dataDir, <span class="kw">nil</span>, logger)
+fetcher    := <span class="pk">data</span>.<span class="fn">NewLiveFixturesFetcher</span>(oddsAPIKey, apiFootballKey, <span class="kw">nil</span>, logger)
+backtester := <span class="pk">backtest</span>.<span class="fn">NewBacktestEngine</span>(engine, dataDir, logger)
+jAnalyzer  := <span class="pk">jackpot</span>.<span class="fn">NewJackpotAnalyzer</span>(engine, dataDir, logger)
+
+<span class="cm">// All 7 dependencies injected into the HTTP server struct</span>
+server := <span class="pk">api</span>.<span class="fn">NewServer</span>(engine, collector, fetcher, sources,
+                         backtester, jFetcher, jAnalyzer, dataDir, logger)
+
+<span class="pk">http</span>.<span class="fn">ListenAndServe</span>(<span class="st">"0.0.0.0:5000"</span>, server.<span class="fn">Handler</span>())</pre>
+
+<div class="callout concept">
+  <strong>Constructor pattern <code>NewXxx()</code></strong> — Go has no classes. By convention, <code>NewXxx()</code> functions create and return initialised structs. They accept dependencies as parameters — this is Go's idiomatic dependency injection.
+</div>
+
+<div class="callout tip">
+  <strong>Why no DI framework?</strong> Go's philosophy is explicit over implicit. You can open <code>main.go</code> and immediately see the entire dependency graph. No annotations, no reflection, no configuration files.
+</div>
+
+<hr>
+
+<!-- ══════════════════════════ STEP 2 ══════════════════════════ -->
+<div class="step-header">
+  <div class="step-num">02</div>
+  <div class="step-meta">
+    <div class="step-title">HTTP Routing &amp; Request Decoding</div>
+    <div class="step-file">internal/api/server.go · lines 28–322</div>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag">struct with unexported fields</span>
+  <span class="tag">chi router</span>
+  <span class="tag">pointer receiver</span>
+  <span class="tag">anonymous struct</span>
+  <span class="tag">*float64 optional</span>
+  <span class="tag">json.NewDecoder</span>
+  <span class="tag">implicit interface</span>
+</div>
+
+<h3>Server struct — unexported fields</h3>
+<pre><span class="kw">type</span> <span class="tp">Server</span> <span class="kw">struct</span> {
+    engine     *<span class="tp">algorithm.PredictionEngine</span>   <span class="cm">// lowercase = unexported (private to package)</span>
+    collector  *<span class="tp">data.HistoricalDataCollector</span>
+    backtester *<span class="tp">backtest.BacktestEngine</span>
+    <span class="cm">// ... 5 more deps ...</span>
+
+    collectMu     <span class="tp">sync.RWMutex</span>         <span class="cm">// guards background job state</span>
+    collectStatus <span class="tp">data.CollectionStatus</span>
+
+    dataDir <span class="tp">string</span>
+    logger  *<span class="tp">slog.Logger</span>
+}</pre>
+
+<div class="callout concept">
+  <strong>Unexported fields</strong> — Fields starting with a lowercase letter are private to their package. External packages cannot access them directly — only through exported methods. This is Go's encapsulation, without <code>private</code>/<code>public</code> keywords.
+</div>
+
+<h3>Handler() — router setup with middleware</h3>
+<pre><span class="cm">// Pointer receiver: (s *Server) gives the method access to all of s's fields</span>
+<span class="kw">func</span> (s *<span class="tp">Server</span>) <span class="fn">Handler</span>() <span class="tp">http.Handler</span> {   <span class="cm">// returns http.Handler interface</span>
+    r := <span class="pk">chi</span>.<span class="fn">NewRouter</span>()
+
+    <span class="cm">// Middleware chain — every request passes through these in order</span>
+    r.<span class="fn">Use</span>(<span class="pk">middleware</span>.Recoverer)   <span class="cm">// catch panics → return 500</span>
+    r.<span class="fn">Use</span>(<span class="pk">middleware</span>.Logger)      <span class="cm">// log each request</span>
+    r.<span class="fn">Use</span>(cors.<span class="fn">New</span>(...).<span class="fn">Handler</span>) <span class="cm">// allow cross-origin requests</span>
+
+    <span class="cm">// s.predictMatch is a method value — bound to receiver s</span>
+    r.<span class="fn">Post</span>(<span class="st">"/api/predict"</span>, s.predictMatch)
+    <span class="cm">// ... 24 more routes ...</span>
+
+    <span class="kw">return</span> r   <span class="cm">// chi.Router satisfies http.Handler implicitly (no "implements" needed)</span>
+}</pre>
+
+<div class="callout concept">
+  <strong>Implicit interface satisfaction</strong> — <code>Handler()</code> returns <code>http.Handler</code>. Chi's router implements <code>ServeHTTP(ResponseWriter, *Request)</code> and therefore satisfies the interface automatically. Go checks structural compatibility at compile time — no <code>implements</code> keyword.
+</div>
+
+<h3>predictMatch handler — anonymous struct + optional pointers</h3>
+<pre><span class="kw">func</span> (s *<span class="tp">Server</span>) <span class="fn">predictMatch</span>(w <span class="tp">http.ResponseWriter</span>, r *<span class="tp">http.Request</span>) {
+
+    <span class="cm">// Anonymous struct — inline type defined only for this request body</span>
+    <span class="kw">var</span> body <span class="kw">struct</span> {
+        HomeTeam    <span class="tp">string</span>   `json:<span class="st">"home_team"</span>`
+        AwayTeam    <span class="tp">string</span>   `json:<span class="st">"away_team"</span>`
+        HomeOdds    *<span class="tp">float64</span> `json:<span class="st">"home_odds"</span>`  <span class="cm">// pointer = optional field</span>
+        DrawOdds    *<span class="tp">float64</span> `json:<span class="st">"draw_odds"</span>`  <span class="cm">// nil if not in request</span>
+        AwayOdds    *<span class="tp">float64</span> `json:<span class="st">"away_odds"</span>`
+    }
+
+    <span class="cm">// Streaming JSON decode — reads directly from HTTP body, no intermediate buffer</span>
+    <span class="kw">if</span> err := <span class="pk">json</span>.<span class="fn">NewDecoder</span>(r.Body).<span class="fn">Decode</span>(&amp;body); err != <span class="kw">nil</span> {
+        <span class="fn">writeError</span>(w, <span class="pk">http</span>.StatusBadRequest, <span class="st">"invalid JSON: "</span>+err.<span class="fn">Error</span>())
+        <span class="kw">return</span>
+    }
+
+    md := &amp;<span class="tp">algorithm.MatchData</span>{
+        HomeTeam: body.HomeTeam,
+        AwayTeam: body.AwayTeam,
+        HomeOdds: body.HomeOdds,  <span class="cm">// pass pointer through — nil if absent</span>
+    }
+
+    pred, err := s.engine.<span class="fn">Predict</span>(md)  <span class="cm">// → Step 3</span>
+    <span class="kw">if</span> err != <span class="kw">nil</span> {
+        <span class="fn">writeError</span>(w, <span class="pk">http</span>.StatusInternalServerError, err.<span class="fn">Error</span>())
+        <span class="kw">return</span>
+    }
+    <span class="fn">writeJSON</span>(w, <span class="pk">http</span>.StatusOK, pred)
+}</pre>
+
+<div class="callout concept">
+  <strong><code>*float64</code> for optional values</strong> — Go has no null, no <code>Optional&lt;T&gt;</code>. A pointer to a type is Go's idiomatic optional: <code>nil</code> = absent, non-nil pointer = present. The JSON decoder sets pointer fields to <code>nil</code> when the key is missing from the JSON.
+</div>
+
+<div class="callout concept">
+  <strong>Anonymous struct</strong> — <code>var body struct{ ... }</code> defines a type inline, used only in this function scope. Avoids creating a named type for one-time use. Common for HTTP request bodies.
+</div>
+
+<hr>
+
+<!-- ══════════════════════════ STEP 3 ══════════════════════════ -->
+<div class="step-header">
+  <div class="step-num">03</div>
+  <div class="step-meta">
+    <div class="step-title">The Prediction Pipeline — Predict()</div>
+    <div class="step-file">internal/algorithm/algorithm.go · lines 138–338</div>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag">constructor</span>
+  <span class="tag">7-step method pipeline</span>
+  <span class="tag">make() for maps</span>
+  <span class="tag">map copy by iteration</span>
+  <span class="tag">nil guard + dereference</span>
+  <span class="tag">named struct return</span>
+</div>
+
+<h3>Constructor — map initialisation matters</h3>
+<pre><span class="kw">func</span> <span class="fn">NewPredictionEngine</span>(sport <span class="tp">string</span>, useV2Weights <span class="tp">bool</span>, enableCalibration <span class="tp">bool</span>) *<span class="tp">PredictionEngine</span> {
+    engine := &amp;<span class="tp">PredictionEngine</span>{
+        sport:     sport,
+        eloRatings: <span class="fn">make</span>(<span class="kw">map</span>[<span class="tp">string</span>]<span class="tp">float64</span>),  <span class="cm">// MUST use make() — nil map panics on write</span>
+        teamForm:  <span class="fn">make</span>(<span class="kw">map</span>[<span class="tp">string</span>]<span class="tp">string</span>),
+    }
+    engine.config = <span class="fn">loadSportConfig</span>(sport)
+
+    <span class="kw">if</span> useV2Weights {
+        <span class="cm">// Maps are references — NEVER copy a map by assignment</span>
+        <span class="cm">// This creates a NEW independent map with the same entries:</span>
+        engine.weights = <span class="fn">make</span>(<span class="kw">map</span>[<span class="tp">string</span>]<span class="tp">float64</span>)
+        <span class="kw">for</span> k, v := <span class="kw">range</span> <span class="pk">domain</span>.FootballWeightsV2 {
+            engine.weights[k] = v
+        }
+    }
+    <span class="kw">return</span> engine
+}</pre>
+
+<div class="callout warn">
+  <strong>Always use <code>make()</code> for maps.</strong> A zero-value map is <code>nil</code>. Reading from a nil map returns the zero value (safe). Writing to a nil map <strong>panics</strong>. Always initialise with <code>make(map[K]V)</code>.
+</div>
+
+<h3>The 7-step Predict pipeline</h3>
+<pre><span class="kw">func</span> (e *<span class="tp">PredictionEngine</span>) <span class="fn">Predict</span>(data *<span class="tp">MatchData</span>) (*<span class="tp">PredictionResult</span>, <span class="tp">error</span>) {
+
+    e.<span class="fn">setDefaults</span>(data)                        <span class="cm">// ① fill missing fields</span>
+    factors     := e.<span class="fn">calculateAllFactors</span>(data) <span class="cm">// ② 16 factor calculations → Step 4</span>
+    rawProbs    := e.<span class="fn">calculateWeightedProbabilities</span>(factors)  <span class="cm">// ③ → Step 6</span>
+
+    <span class="cm">// ④ optional: blend with market odds (only when caller provided them)</span>
+    <span class="kw">if</span> data.HomeOdds != <span class="kw">nil</span> &amp;&amp; data.DrawOdds != <span class="kw">nil</span> &amp;&amp; data.AwayOdds != <span class="kw">nil</span> {
+        marketProbs := <span class="fn">oddsToProbs</span>(*data.HomeOdds, *data.DrawOdds, *data.AwayOdds)
+        quality     := e.<span class="fn">assessDataQuality</span>(data)          <span class="cm">// 0.0 – 1.0</span>
+        modelWeight := <span class="nu">0.40</span> + quality*<span class="nu">0.30</span>               <span class="cm">// 40-70% model, rest market</span>
+        rawProbs     = <span class="fn">blendProbabilities</span>(rawProbs, marketProbs, modelWeight)
+    }
+
+    <span class="cm">// ⑤ Poisson blend (football only) → Step 7</span>
+    <span class="kw">var</span> blendedProbs <span class="tp">Probabilities</span>
+    <span class="kw">if</span> e.sport == <span class="st">"football"</span> {
+        poissonProbs := e.<span class="fn">calculatePoissonProbabilities</span>(data, factors)
+        blendedProbs  = <span class="fn">blendProbabilities</span>(rawProbs, poissonProbs, <span class="nu">0.6</span>)
+    } <span class="kw">else</span> {
+        blendedProbs = rawProbs
+    }
+
+    calibratedProbs := e.<span class="fn">calibrateProbabilities</span>(blendedProbs) <span class="cm">// ⑥ Platt scaling → Step 8</span>
+    confidence      := e.<span class="fn">calculateConfidence</span>(factors, calibratedProbs)
+    recommendation  := e.<span class="fn">generateRecommendation</span>(calibratedProbs, confidence,
+                         data.HomeOdds, data.DrawOdds, data.AwayOdds) <span class="cm">// ⑦ Kelly → Step 9</span>
+
+    <span class="kw">return</span> &amp;<span class="tp">PredictionResult</span>{
+        HomeWinProb: <span class="fn">round</span>(calibratedProbs.Home, <span class="nu">4</span>),
+        DrawProb:    <span class="fn">round</span>(calibratedProbs.Draw, <span class="nu">4</span>),
+        AwayWinProb: <span class="fn">round</span>(calibratedProbs.Away, <span class="nu">4</span>),
+        Confidence:  <span class="fn">round</span>(confidence, <span class="nu">4</span>),
+        Recommendation: recommendation,
+        Timestamp:   <span class="pk">time</span>.<span class="fn">Now</span>().<span class="fn">Format</span>(<span class="pk">time</span>.RFC3339),
+    }, <span class="kw">nil</span>
+}</pre>
+
+<div class="callout concept">
+  <strong>Dereferencing <code>*data.HomeOdds</code></strong> — Since <code>HomeOdds</code> is <code>*float64</code>, you must nil-check it first, then dereference with <code>*</code> to get the underlying <code>float64</code>. The nil guard and dereference always appear together.
+</div>
+
+<hr>
+
+<!-- ══════════════════════════ STEP 4 ══════════════════════════ -->
+<div class="step-header">
+  <div class="step-num">04</div>
+  <div class="step-meta">
+    <div class="step-title">16 Factor Calculations</div>
+    <div class="step-file">internal/algorithm/factors.go · lines 12–797</div>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag">map[string]interface{}</span>
+  <span class="tag">FactorResult struct</span>
+  <span class="tag">multiple return values</span>
+  <span class="tag">closure / anonymous func</span>
+  <span class="tag">rune iteration</span>
+  <span class="tag">comma-ok map lookup</span>
+  <span class="tag">math.Tanh normalisation</span>
+</div>
+
+<p>The codebase has two factor architectures — original dict-based and newer typed structs. Both coexist, handled by type assertion in Step 6.</p>
+
+<table>
+  <tr><th>Original 10 factors</th><th>Contextual 6 factors (V2)</th></tr>
+  <tr><td>Returns <code>map[string]interface{}</code></td><td>Returns <code>domain.FactorResult</code> struct</td></tr>
+  <tr><td>Score extracted: <code>dict["score"].(float64)</code></td><td>Score is a typed field: <code>fr.Value</code></td></tr>
+  <tr><td>Always active</td><td><code>Triggered bool</code> — can be inactive (Weight=0)</td></tr>
+  <tr><td>No confidence tracking</td><td><code>Confidence int</code> + <code>Metadata map</code></td></tr>
+</table>
+
+<h3>Dispatcher — two return types in one map</h3>
+<pre><span class="kw">func</span> (e *<span class="tp">PredictionEngine</span>) <span class="fn">calculateAllFactors</span>(data *<span class="tp">MatchData</span>) <span class="kw">map</span>[<span class="tp">string</span>]<span class="tp">interface</span>{} {
+    factors := <span class="fn">make</span>(<span class="kw">map</span>[<span class="tp">string</span>]<span class="tp">interface</span>{})
+
+    <span class="cm">// Original 10 — return map[string]interface{}</span>
+    factors[<span class="st">"expectedGoals"</span>]  = e.<span class="fn">calculateExpectedGoals</span>(data)
+    factors[<span class="st">"teamStrength"</span>]    = e.<span class="fn">calculateTeamStrength</span>(data)
+    factors[<span class="st">"currentForm"</span>]     = e.<span class="fn">calculateCurrentForm</span>(data)
+    <span class="cm">// ... 7 more ...</span>
+
+    <span class="cm">// Contextual 6 — return domain.FactorResult</span>
+    factors[<span class="st">"teamQualityGap"</span>] = e.<span class="fn">calculateTeamQualityGap</span>(data)
+
+    <span class="cm">// Multiple return values — idiomatic Go</span>
+    h2hHist, h2hAnom := e.<span class="fn">calculateH2HFactors</span>(data, matchContext)
+    factors[<span class="st">"h2hHistorical"</span>] = h2hHist
+    factors[<span class="st">"h2hAnomaly"</span>]    = h2hAnom
+
+    <span class="kw">return</span> factors
+}</pre>
+
+<div class="callout concept">
+  <strong>Multiple return values</strong> — <code>h2hHist, h2hAnom := e.calculateH2HFactors(...)</code> returns two <code>FactorResult</code> values. Go functions return multiple values natively — no tuples or wrapper structs needed. This is idiomatic for related values or the <code>(result, error)</code> pair.
+</div>
+
+<h3>formToScore — rune iteration + comma-ok map lookup</h3>
+<pre><span class="kw">func</span> <span class="fn">formToScore</span>(form <span class="tp">string</span>) <span class="tp">float64</span> {
+    <span class="cm">// Map literal: rune keys, float64 values</span>
+    points  := <span class="kw">map</span>[<span class="tp">rune</span>]<span class="tp">float64</span>{<span class="st">'W'</span>: <span class="nu">1.0</span>, <span class="st">'D'</span>: <span class="nu">0.5</span>, <span class="st">'L'</span>: <span class="nu">0.0</span>}
+    weights := []<span class="tp">float64</span>{<span class="nu">0.3</span>, <span class="nu">0.25</span>, <span class="nu">0.2</span>, <span class="nu">0.15</span>, <span class="nu">0.1</span>}  <span class="cm">// recent result = higher weight</span>
+    score   := <span class="nu">0.0</span>
+
+    <span class="cm">// Range over string yields runes (Unicode code points) not bytes</span>
+    <span class="kw">for</span> i, result := <span class="kw">range</span> []<span class="tp">rune</span>(form) {
+        <span class="kw">if</span> i >= <span class="nu">5</span> { <span class="kw">break</span> }
+        weight := <span class="nu">0.1</span>
+        <span class="kw">if</span> i < <span class="fn">len</span>(weights) { weight = weights[i] }
+
+        <span class="cm">// Comma-ok map lookup — never panics on missing key</span>
+        <span class="kw">if</span> val, ok := points[result]; ok {
+            score += val * weight
+        }
+    }
+    <span class="kw">return</span> score
+}</pre>
+
+<div class="callout concept">
+  <strong>Rune vs byte</strong> — Strings in Go are UTF-8 byte slices. Ranging over a string yields <code>rune</code> (Unicode code point), not raw bytes. For ASCII strings (W/D/L) this is the same, but iterating as runes is the correct general pattern.
+</div>
+
+<div class="callout concept">
+  <strong>Comma-ok map lookup <code>val, ok := m[key]</code></strong> — If the key exists, <code>ok</code> is <code>true</code>. If absent, <code>ok</code> is <code>false</code> and <code>val</code> is the zero value. Never panics. Always prefer this over plain <code>m[key]</code> when the key may be absent.
+</div>
+
+<h3>Manager Momentum — closure (anonymous function)</h3>
+<pre><span class="kw">func</span> (e *<span class="tp">PredictionEngine</span>) <span class="fn">calculateManagerMomentum</span>(...) <span class="tp">domain.FactorResult</span> {
+
+    <span class="cm">// Closure: anonymous function assigned to a variable</span>
+    <span class="cm">// Go functions are first-class values</span>
+    calcBounce := <span class="kw">func</span>(mgr *<span class="tp">domain.ManagerInfo</span>) <span class="tp">float64</span> {
+        base   := <span class="nu">0.08</span>
+        <span class="kw">if</span> mgr.IsInterim { base = <span class="nu">0.056</span> }
+        bounce := base * <span class="pk">math</span>.<span class="fn">Pow</span>(<span class="nu">0.85</span>, <span class="tp">float64</span>(mgr.GamesManaged))
+        <span class="cm">// formula: 8% bounce decaying 15% per game managed</span>
+        <span class="kw">if</span> bounce < <span class="nu">0.01</span> { <span class="kw">return</span> <span class="nu">0.0</span> }
+        <span class="kw">return</span> bounce
+    }
+
+    homeBounce := <span class="fn">calcBounce</span>(ctx.HomeManagerInfo)
+    awayBounce := <span class="fn">calcBounce</span>(ctx.AwayManagerInfo)
+    netBounce  := homeBounce - awayBounce
+    <span class="cm">// ...</span>
+}</pre>
+
+<div class="callout concept">
+  <strong>Closure / anonymous function</strong> — <code>calcBounce := func(...) float64 { ... }</code> defines a function as a value. Used here to avoid repeating the bounce logic for home and away. Go functions are first-class — they can be assigned to variables, passed as arguments, and returned.
+</div>
+
+<hr>
+
+<!-- ══════════════════════════ STEP 5 ══════════════════════════ -->
+<div class="step-header">
+  <div class="step-num">05</div>
+  <div class="step-meta">
+    <div class="step-title">Match Context Building</div>
+    <div class="step-file">internal/context/builder.go · lines 15–441</div>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag">builder pattern</span>
+  <span class="tag">in-memory cache</span>
+  <span class="tag">time.Parse reference date</span>
+  <span class="tag">os.ReadFile</span>
+  <span class="tag">json.Unmarshal</span>
+  <span class="tag">no import cycle</span>
+  <span class="tag">graceful fallback</span>
+</div>
+
+<h3>Builder with caching</h3>
+<pre><span class="kw">type</span> <span class="tp">MatchContextBuilder</span> <span class="kw">struct</span> {
+    historicalData   <span class="tp">interface</span>{}
+    h2hCache         <span class="kw">map</span>[<span class="tp">string</span>]*<span class="tp">domain.H2HRecord</span>         <span class="cm">// avoids recomputing H2H</span>
+    seasonStatsCache <span class="kw">map</span>[<span class="tp">string</span>]<span class="kw">map</span>[<span class="tp">string</span>]<span class="tp">interface</span>{}
+    managerDB        <span class="kw">map</span>[<span class="tp">string</span>]*<span class="tp">domain.ManagerInfo</span>        <span class="cm">// loaded from managers.json</span>
+}</pre>
+
+<h3>Go's time format — the reference date</h3>
+<pre><span class="kw">func</span> <span class="fn">calculateGamesManaged</span>(appointmentDateStr <span class="tp">string</span>) <span class="tp">int</span> {
+    <span class="cm">// Go's reference time: Mon Jan 2 15:04:05 MST 2006</span>
+    <span class="cm">// Year=2006, Month=01, Day=02 — not strftime codes (%Y %m %d)</span>
+    t, err := <span class="pk">time</span>.<span class="fn">Parse</span>(<span class="st">"2006-01-02"</span>, appointmentDateStr)
+    <span class="kw">if</span> err != <span class="kw">nil</span> { <span class="kw">return</span> <span class="nu">50</span> }   <span class="cm">// graceful fallback: treat as established manager</span>
+
+    weeksElapsed := <span class="pk">time</span>.<span class="fn">Since</span>(t).Hours() / <span class="nu">24</span> / <span class="nu">7</span>
+    <span class="kw">return</span> <span class="tp">int</span>(weeksElapsed)
+}</pre>
+
+<div class="callout concept">
+  <strong>Go's reference time <code>"2006-01-02"</code></strong> — Go uses a specific real moment as the format template (Mon Jan 2 15:04:05 MST 2006). Year=2006, Month=01, Day=02, Hour=15, Minute=04, Second=05. This eliminates ambiguity between format codes, but takes some getting used to.
+</div>
+
+<h3>BuildContext — graceful fallback on missing data</h3>
+<pre><span class="kw">func</span> (b *<span class="tp">MatchContextBuilder</span>) <span class="fn">BuildContext</span>(...) *<span class="tp">domain.MatchContext</span> {
+    <span class="kw">if</span> homeTeam == <span class="st">""</span> || awayTeam == <span class="st">""</span> {
+        <span class="kw">return</span> <span class="pk">domain</span>.<span class="fn">NewNeutralContext</span>()  <span class="cm">// returns sensible defaults</span>
+    }
+
+    cacheKey := <span class="pk">fmt</span>.<span class="fn">Sprintf</span>(<span class="st">"%s_%s"</span>, homeTeam, awayTeam)
+    <span class="kw">if</span> cached, ok := b.h2hCache[cacheKey]; ok {
+        <span class="kw">return</span> cached  <span class="cm">// cache hit — avoid re-computation</span>
+    }
+
+    <span class="kw">return</span> &amp;<span class="tp">domain.MatchContext</span>{
+        HomeDefensiveStyle: <span class="fn">classifyDefensiveStyle</span>(homePossession),
+        HomeManagerInfo:    b.managerDB[homeTeam],  <span class="cm">// nil if not found (ok in Go)</span>
+        HomeRecentForm:     <span class="fn">parseForm</span>(homeFormStr), <span class="cm">// "WWDLW" → []string{"W","W","D","L","W"}</span>
+        H2HRecord:          b.<span class="fn">getH2HRecord</span>(homeTeam, awayTeam, homePos, awayPos),
+        <span class="cm">// ...</span>
+    }
+}</pre>
+
+<div class="callout concept">
+  <strong>Package boundary — no import cycle</strong> — Both <code>context</code> and <code>algorithm</code> import <code>domain</code>, but neither imports the other. Go's compiler rejects circular imports. The <code>domain</code> package is a shared data layer — no logic, just types — that all packages can depend on safely.
+</div>
+
+<hr>
+
+<!-- ══════════════════════════ STEP 6 ══════════════════════════ -->
+<div class="step-header">
+  <div class="step-num">06</div>
+  <div class="step-meta">
+    <div class="step-title">Weighted Probability Calculation</div>
+    <div class="step-file">internal/algorithm/probs.go · lines 10–86</div>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag">type assertion (safe form)</span>
+  <span class="tag">dynamic normalization</span>
+  <span class="tag">map iteration order</span>
+  <span class="tag">multi-signal draw model</span>
+  <span class="tag">math.Max / math.Min clamp</span>
+</div>
+
+<h3>Separating two factor types via type assertion</h3>
+<pre><span class="kw">func</span> (e *<span class="tp">PredictionEngine</span>) <span class="fn">calculateWeightedProbabilities</span>(factors <span class="kw">map</span>[<span class="tp">string</span>]<span class="tp">interface</span>{}) <span class="tp">Probabilities</span> {
+    activeFactors  := <span class="fn">make</span>(<span class="kw">map</span>[<span class="tp">string</span>]factorData)
+    drawBoostTotal := <span class="nu">0.0</span>
+
+    <span class="kw">for</span> name, raw := <span class="kw">range</span> factors {
+
+        <span class="cm">// Safe type assertion (comma-ok) — no panic on wrong type</span>
+        <span class="kw">if</span> fr, ok := raw.(<span class="tp">domain.FactorResult</span>); ok {
+            <span class="kw">if</span> fr.Triggered &amp;&amp; fr.Weight > <span class="nu">0</span> {
+                activeFactors[name] = factorData{score: fr.Value, weight: fr.Weight}
+                <span class="kw">if</span> val, ok := fr.Metadata[<span class="st">"draw_boost"</span>].(<span class="tp">float64</span>); ok {
+                    drawBoostTotal += val
+                }
+            }
+        } <span class="kw">else if</span> dict, ok := raw.(<span class="kw">map</span>[<span class="tp">string</span>]<span class="tp">interface</span>{}); ok {
+            <span class="kw">if</span> score, ok := dict[<span class="st">"score"</span>].(<span class="tp">float64</span>); ok {
+                <span class="kw">if</span> w := e.config.Weights[name]; w > <span class="nu">0</span> {
+                    activeFactors[name] = factorData{score: score, weight: w}
+                }
+            }
+        }
+    }
+
+    <span class="cm">// Dynamic normalisation — only active factors contribute</span>
+    totalWeight := <span class="nu">0.0</span>
+    <span class="kw">for</span> _, fd := <span class="kw">range</span> activeFactors { totalWeight += fd.weight }
+
+    weightedScore := <span class="nu">0.0</span>
+    <span class="kw">for</span> _, fd := <span class="kw">range</span> activeFactors {
+        weightedScore += fd.score * (fd.weight / totalWeight)
+    }
+    <span class="cm">// weightedScore in (0,1): &gt;0.5 = home favoured, &lt;0.5 = away favoured</span>
+
+    drawProb := <span class="fn">calculateDrawProbability</span>(weightedScore, factors, drawBoostTotal)
+    homeProb := weightedScore * (<span class="nu">1</span> - drawProb)
+    awayProb := (<span class="nu">1</span> - weightedScore) * (<span class="nu">1</span> - drawProb)
+
+    <span class="cm">// Clamp and normalise to sum = 1.0</span>
+    homeProb = <span class="pk">math</span>.<span class="fn">Max</span>(<span class="nu">0.05</span>, <span class="pk">math</span>.<span class="fn">Min</span>(<span class="nu">0.90</span>, homeProb))
+    drawProb = <span class="pk">math</span>.<span class="fn">Max</span>(<span class="nu">0.05</span>, <span class="pk">math</span>.<span class="fn">Min</span>(<span class="nu">0.90</span>, drawProb))
+    awayProb = <span class="pk">math</span>.<span class="fn">Max</span>(<span class="nu">0.05</span>, <span class="pk">math</span>.<span class="fn">Min</span>(<span class="nu">0.90</span>, awayProb))
+    total    := homeProb + drawProb + awayProb
+
+    <span class="kw">return</span> <span class="tp">Probabilities</span>{Home: homeProb/total, Draw: drawProb/total, Away: awayProb/total}
+}</pre>
+
+<div class="callout concept">
+  <strong>Type assertion <code>v, ok := x.(T)</code></strong> — The safe form. If <code>x</code> holds a value of type <code>T</code>, <code>ok</code> is <code>true</code>. If not, <code>ok</code> is <code>false</code> and <code>v</code> is the zero value. The unsafe form <code>v := x.(T)</code> panics on wrong type — avoid it.
+</div>
+
+<div class="callout concept">
+  <strong>Map iteration order is random in Go</strong> — Iterating a map with <code>for k, v := range m</code> does not guarantee any order. This is intentional — Go deliberately randomizes it to prevent relying on accidental ordering. If order matters, sort the keys first.
+</div>
+
+<hr>
+
+<!-- ══════════════════════════ STEP 7 ══════════════════════════ -->
+<div class="step-header">
+  <div class="step-num">07</div>
+  <div class="step-meta">
+    <div class="step-title">Poisson Distribution Model</div>
+    <div class="step-file">internal/algorithm/poisson.go · lines 9–80</div>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag">gonum external library</span>
+  <span class="tag">struct literal with field</span>
+  <span class="tag">nested loops</span>
+  <span class="tag">probability accumulation</span>
+  <span class="tag">blendProbabilities</span>
+</div>
+
+<pre><span class="kw">import</span> <span class="st">"gonum.org/v1/gonum/stat/distuv"</span>   <span class="cm">// Go's NumPy/SciPy equivalent</span>
+
+<span class="cm">// Create two independent Poisson distributions — one per team</span>
+homePoisson := <span class="tp">distuv.Poisson</span>{Lambda: homeXg}   <span class="cm">// λ = expected goals</span>
+awayPoisson := <span class="tp">distuv.Poisson</span>{Lambda: awayXg}
+
+homeWin, draw, awayWin := <span class="nu">0.0</span>, <span class="nu">0.0</span>, <span class="nu">0.0</span>
+
+<span class="cm">// Iterate all 36 scorelines 0-0 through 5-5</span>
+<span class="kw">for</span> h := <span class="nu">0</span>; h &lt;= <span class="nu">5</span>; h++ {
+    <span class="kw">for</span> a := <span class="nu">0</span>; a &lt;= <span class="nu">5</span>; a++ {
+        <span class="cm">// P(scoreline h:a) = P(home scores h) × P(away scores a)</span>
+        prob := homePoisson.<span class="fn">Prob</span>(<span class="tp">float64</span>(h)) * awayPoisson.<span class="fn">Prob</span>(<span class="tp">float64</span>(a))
+        <span class="kw">switch</span> {
+        <span class="kw">case</span> h > a:  homeWin += prob
+        <span class="kw">case</span> h == a: draw    += prob
+        <span class="kw">default</span>:    awayWin += prob
+        }
+    }
+}
+total := homeWin + draw + awayWin
+<span class="kw">return</span> <span class="tp">Probabilities</span>{Home: homeWin/total, Draw: draw/total, Away: awayWin/total}</pre>
+
+<div class="callout concept">
+  <strong>Why Poisson for football?</strong> Goals are rare, independent events — exactly the Poisson distribution's domain. Each team's goals are modelled as an independent Poisson process with λ = expected goals (xG). Multiplying the two PMFs gives the probability of any exact scoreline.
+</div>
+
+<div class="callout concept">
+  <strong>Why stop at 5-5?</strong> Beyond 5 goals per team, probabilities are negligible (&lt;0.01%). The 36 scorelines 0-0 through 5-5 cover 99%+ of total probability mass, making the approximation effectively exact.
+</div>
+
+<h3>Blending the two models</h3>
+<pre><span class="cm">// Simple weighted average of two Probabilities structs</span>
+<span class="kw">func</span> <span class="fn">blendProbabilities</span>(probs1, probs2 <span class="tp">Probabilities</span>, weight2 <span class="tp">float64</span>) <span class="tp">Probabilities</span> {
+    w1 := <span class="nu">1</span> - weight2
+    <span class="kw">return</span> <span class="tp">Probabilities</span>{
+        Home: probs1.Home*w1 + probs2.Home*weight2,
+        Draw: probs1.Draw*w1 + probs2.Draw*weight2,
+        Away: probs1.Away*w1 + probs2.Away*weight2,
+    }
+}
+<span class="cm">// In Predict(): 60% Poisson + 40% weighted factor model</span>
+blended = <span class="fn">blendProbabilities</span>(rawProbs, poissonProbs, <span class="nu">0.6</span>)</pre>
+
+<hr>
+
+<!-- ══════════════════════════ STEP 8 ══════════════════════════ -->
+<div class="step-header">
+  <div class="step-num">08</div>
+  <div class="step-meta">
+    <div class="step-title">Thread-Safe Calibration Engine</div>
+    <div class="step-file">internal/algorithm/calibration.go · lines 9–376</div>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag">sync.RWMutex</span>
+  <span class="tag">defer</span>
+  <span class="tag">goroutine safety</span>
+  <span class="tag">sliding window slice</span>
+  <span class="tag">defensive map copy</span>
+</div>
+
+<h3>RWMutex — concurrent reads, exclusive writes</h3>
+<pre><span class="kw">type</span> <span class="tp">CalibrationEngine</span> <span class="kw">struct</span> {
+    mu                <span class="tp">sync.RWMutex</span>           <span class="cm">// guards all mutable fields</span>
+    predictionHistory []<span class="tp">PredictionRecord</span>    <span class="cm">// sliding window, max 1000</span>
+    factorPerformance <span class="kw">map</span>[<span class="tp">string</span>]*<span class="tp">FactorStats</span>
+}
+
+<span class="cm">// WRITE path — exclusive lock</span>
+<span class="kw">func</span> (ce *<span class="tp">CalibrationEngine</span>) <span class="fn">RecordPrediction</span>(...) {
+    ce.mu.<span class="fn">Lock</span>()
+    <span class="kw">defer</span> ce.mu.<span class="fn">Unlock</span>()  <span class="cm">// guaranteed unlock — even if function panics</span>
+
+    ce.predictionHistory = <span class="fn">append</span>(ce.predictionHistory, record)
+
+    <span class="cm">// Sliding window: discard oldest when at capacity</span>
+    <span class="kw">if</span> <span class="fn">len</span>(ce.predictionHistory) > ce.maxHistory {
+        ce.predictionHistory = ce.predictionHistory[<span class="nu">1</span>:]  <span class="cm">// re-slice from index 1</span>
+    }
+}
+
+<span class="cm">// READ path — shared lock (multiple goroutines can read simultaneously)</span>
+<span class="kw">func</span> (ce *<span class="tp">CalibrationEngine</span>) <span class="fn">CalibrateWeights</span>(weights <span class="kw">map</span>[<span class="tp">string</span>]<span class="tp">float64</span>) <span class="kw">map</span>[<span class="tp">string</span>]<span class="tp">float64</span> {
+    ce.mu.<span class="fn">RLock</span>()
+    <span class="kw">defer</span> ce.mu.<span class="fn">RUnlock</span>()
+
+    <span class="kw">if</span> <span class="fn">len</span>(ce.predictionHistory) < <span class="nu">20</span> {
+        <span class="kw">return</span> <span class="fn">copyWeights</span>(weights)  <span class="cm">// not enough data — return defensive copy</span>
+    }
+    <span class="cm">// ... adjust weights by ±10% per factor performance ...</span>
+}</pre>
+
+<div class="callout concept">
+  <strong><code>sync.RWMutex</code></strong> — Allows multiple concurrent readers OR one exclusive writer, never both. Use <code>RLock()</code>/<code>RUnlock()</code> for read-only operations, <code>Lock()</code>/<code>Unlock()</code> for mutations. More efficient than a plain <code>Mutex</code> when reads are much more frequent than writes.
+</div>
+
+<div class="callout concept">
+  <strong><code>defer</code></strong> — Schedules a call to run when the surrounding function returns — whether normally, from an early <code>return</code>, or even via <code>panic</code>. Used here to guarantee the mutex is always unlocked. Without defer, a panic would deadlock every goroutine waiting on the lock.
+</div>
+
+<h3>Defensive map copy</h3>
+<pre><span class="cm">// WRONG — both variables point to the SAME underlying map</span>
+copy := currentWeights   <span class="cm">// mutations to copy affect currentWeights too!</span>
+
+<span class="cm">// CORRECT — manually copy each entry into a new map</span>
+<span class="kw">func</span> <span class="fn">copyWeights</span>(weights <span class="kw">map</span>[<span class="tp">string</span>]<span class="tp">float64</span>) <span class="kw">map</span>[<span class="tp">string</span>]<span class="tp">float64</span> {
+    result := <span class="fn">make</span>(<span class="kw">map</span>[<span class="tp">string</span>]<span class="tp">float64</span>, <span class="fn">len</span>(weights))
+    <span class="kw">for</span> k, v := <span class="kw">range</span> weights { result[k] = v }
+    <span class="kw">return</span> result
+}</pre>
+
+<div class="callout warn">
+  <strong>Maps are reference types.</strong> Assigning a map variable copies only the reference — both variables point to the same data. To create an independent copy, iterate and copy entries manually (or use <code>maps.Clone()</code> in Go 1.21+).
+</div>
+
+<hr>
+
+<!-- ══════════════════════════ STEP 9 ══════════════════════════ -->
+<div class="step-header">
+  <div class="step-num">09</div>
+  <div class="step-meta">
+    <div class="step-title">Kelly Criterion &amp; Betting Recommendation</div>
+    <div class="step-file">internal/algorithm/probs.go · lines 219–322</div>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag">pointer to anonymous struct</span>
+  <span class="tag">nil guard pattern</span>
+  <span class="tag">EV formula</span>
+  <span class="tag">Kelly Criterion</span>
+  <span class="tag">switch statement</span>
+</div>
+
+<h3>Finding the best bet — nil pointer to anonymous struct</h3>
+<pre><span class="kw">func</span> (e *<span class="tp">PredictionEngine</span>) <span class="fn">generateRecommendation</span>(
+    probs <span class="tp">Probabilities</span>, confidence <span class="tp">float64</span>,
+    homeOdds, drawOdds, awayOdds *<span class="tp">float64</span>,
+) *<span class="tp">Recommendation</span> {
+
+    bestEV := <span class="nu">0.0</span>
+    <span class="cm">// Pointer to anonymous struct — starts nil, only set if a positive-EV bet found</span>
+    <span class="kw">var</span> bestBet *<span class="kw">struct</span>{ outcome <span class="tp">string</span>; prob <span class="tp">float64</span>; odds <span class="tp">float64</span> }
+
+    <span class="kw">if</span> homeOdds != <span class="kw">nil</span> {
+        ev := (probs.Home * *homeOdds) - <span class="nu">1</span>   <span class="cm">// EV = (probability × odds) - 1</span>
+        <span class="kw">if</span> ev > bestEV {
+            bestEV  = ev
+            bestBet = &amp;<span class="kw">struct</span>{ outcome <span class="tp">string</span>; prob <span class="tp">float64</span>; odds <span class="tp">float64</span> }{
+                <span class="st">"Home Win"</span>, probs.Home, *homeOdds,
+            }
+        }
+    }
+    <span class="cm">// Same for draw and away ...</span>
+
+    <span class="cm">// Kelly Criterion</span>
+    <span class="kw">if</span> bestBet != <span class="kw">nil</span> &amp;&amp; bestEV > <span class="nu">0</span> {
+        b      := bestBet.odds - <span class="nu">1</span>   <span class="cm">// net odds (profit per unit staked)</span>
+        kelly  := (b*bestBet.prob - (<span class="nu">1</span>-bestBet.prob)) / b
+        <span class="cm">// Apply fractional Kelly (25%) and cap at 5% max stake</span>
+        stakePct = <span class="pk">math</span>.<span class="fn">Min</span>(<span class="nu">0.05</span>, <span class="pk">math</span>.<span class="fn">Max</span>(<span class="nu">0</span>, kelly*<span class="nu">0.25</span>))
+    }
+
+    <span class="kw">switch</span> {
+    <span class="kw">case</span> bestEV > <span class="nu">0.10</span> &amp;&amp; confidence > <span class="nu">0.70</span>: recType = <span class="st">"Strong Bet"</span>
+    <span class="kw">case</span> bestEV > <span class="nu">0.05</span> &amp;&amp; confidence > <span class="nu">0.60</span>: recType = <span class="st">"Value Bet"</span>
+    <span class="kw">case</span> bestEV > <span class="nu">0</span>:                           recType = <span class="st">"Small Edge"</span>
+    <span class="kw">default</span>:                                   recType = <span class="st">"No Bet"</span>
+    }
+    <span class="cm">// ...</span>
+}</pre>
+
+<div class="callout tip">
+  <strong>Kelly Criterion — the formula:</strong> <code>f* = (b×p - q) / b</code> where b = odds−1 (profit per unit), p = win probability, q = 1−p (loss probability). Fractional Kelly (×0.25) and a 5% cap protect the bankroll from ruin in volatile sequences.
+</div>
+
+<hr>
+
+<!-- ══════════════════════════ STEP 10 ══════════════════════════ -->
+<div class="step-header">
+  <div class="step-num">10</div>
+  <div class="step-meta">
+    <div class="step-title">JSON Serialization &amp; Response</div>
+    <div class="step-file">internal/api/server.go · lines 137–149</div>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag">struct tags json:"..."</span>
+  <span class="tag">json.NewEncoder streaming</span>
+  <span class="tag">http.ResponseWriter</span>
+  <span class="tag">writeJSON helper</span>
+</div>
+
+<h3>Struct tags control JSON output</h3>
+<pre><span class="kw">type</span> <span class="tp">PredictionResult</span> <span class="kw">struct</span> {
+    HomeTeam       <span class="tp">string</span>                 `json:<span class="st">"homeTeam"</span>`
+    AwayTeam       <span class="tp">string</span>                 `json:<span class="st">"awayTeam"</span>`
+    HomeWinProb    <span class="tp">float64</span>                `json:<span class="st">"homeWinProb"</span>`
+    DrawProb       <span class="tp">float64</span>                `json:<span class="st">"drawProb"</span>`
+    AwayWinProb    <span class="tp">float64</span>                `json:<span class="st">"awayWinProb"</span>`
+    Confidence     <span class="tp">float64</span>                `json:<span class="st">"confidence"</span>`
+    Recommendation *<span class="tp">Recommendation</span>       `json:<span class="st">"recommendation"</span>`
+    Factors        <span class="kw">map</span>[<span class="tp">string</span>]<span class="tp">interface</span>{} `json:<span class="st">"factors"</span>`
+    ExpectedGoals  <span class="kw">struct</span> {               <span class="cm">// anonymous nested struct</span>
+        Home <span class="tp">float64</span> `json:<span class="st">"home"</span>`
+        Away <span class="tp">float64</span> `json:<span class="st">"away"</span>`
+    } `json:<span class="st">"expectedGoals"</span>`
+    Timestamp <span class="tp">string</span> `json:<span class="st">"timestamp"</span>`
+}
+
+<span class="cm">// Streaming encode — writes directly to ResponseWriter (no intermediate buffer)</span>
+<span class="kw">func</span> <span class="fn">writeJSON</span>(w <span class="tp">http.ResponseWriter</span>, status <span class="tp">int</span>, v <span class="kw">any</span>) {
+    w.<span class="fn">Header</span>().<span class="fn">Set</span>(<span class="st">"Content-Type"</span>, <span class="st">"application/json"</span>)
+    w.<span class="fn">WriteHeader</span>(status)
+    _ = <span class="pk">json</span>.<span class="fn">NewEncoder</span>(w).<span class="fn">Encode</span>(v)
+}</pre>
+
+<div class="callout concept">
+  <strong>Struct tags <code>`json:"name"`</code></strong> — Backtick strings are raw string literals in Go (no escape sequences). Struct tags are metadata attached to fields, read at runtime by <code>encoding/json</code>. They control JSON key names, omitempty behaviour, and more.
+</div>
+
+<div class="callout concept">
+  <strong><code>json.NewEncoder</code> vs <code>json.Marshal</code></strong> — <code>Marshal</code> returns a <code>[]byte</code> (allocates memory). <code>Encoder.Encode</code> writes directly to any <code>io.Writer</code> (including <code>http.ResponseWriter</code>) — no intermediate allocation. More efficient for HTTP handlers.
+</div>
+
+<div class="response-box">
+  <div class="bar">200 OK · application/json · prediction response</div>
+<pre>{
+  <span class="st">"homeTeam"</span>: <span class="st">"Arsenal"</span>,
+  <span class="st">"awayTeam"</span>: <span class="st">"Chelsea"</span>,
+  <span class="st">"homeWinProb"</span>: <span class="nu">0.4821</span>,
+  <span class="st">"drawProb"</span>:    <span class="nu">0.2634</span>,
+  <span class="st">"awayWinProb"</span>: <span class="nu">0.2545</span>,
+  <span class="st">"confidence"</span>:  <span class="nu">0.6372</span>,
+  <span class="st">"recommendation"</span>: {
+    <span class="st">"outcome"</span>:        <span class="st">"Home Win"</span>,
+    <span class="st">"probability"</span>:    <span class="nu">48.2</span>,
+    <span class="st">"recommendation"</span>: <span class="st">"Value Bet"</span>,
+    <span class="st">"stakePercentage"</span>:<span class="nu">2.14</span>,
+    <span class="st">"expectedValue"</span>:  <span class="nu">7.84</span>,
+    <span class="st">"kellyStake"</span>:     <span class="nu">0.0214</span>
+  },
+  <span class="st">"expectedGoals"</span>: { <span class="st">"home"</span>: <span class="nu">1.52</span>, <span class="st">"away"</span>: <span class="nu">1.21</span> },
+  <span class="st">"timestamp"</span>:    <span class="st">"2026-03-11T09:15:32Z"</span>
+}</pre>
+</div>
+
+<hr>
+
+<!-- ══════════════════════════ BONUS ══════════════════════════ -->
+<div class="section-label">Bonus</div>
+
+<div class="step-header green">
+  <div class="step-num">B</div>
+  <div class="step-meta">
+    <div class="step-title">Background Data Collection — Goroutine + Mutex</div>
+    <div class="step-file">internal/api/server.go · lines 411–470</div>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag">goroutine</span>
+  <span class="tag">go func()</span>
+  <span class="tag">closure captures</span>
+  <span class="tag">sync.RWMutex</span>
+  <span class="tag">progress callback</span>
+  <span class="tag">async HTTP response</span>
+</div>
+
+<pre><span class="kw">func</span> (s *<span class="tp">Server</span>) <span class="fn">startDataCollection</span>(w <span class="tp">http.ResponseWriter</span>, r *<span class="tp">http.Request</span>) {
+
+    <span class="cm">// ① Check current state (read lock — safe for concurrent status polls)</span>
+    s.collectMu.<span class="fn">RLock</span>()
+    running := s.collectStatus.Running
+    s.collectMu.<span class="fn">RUnlock</span>()
+    <span class="kw">if</span> running {
+        <span class="fn">writeError</span>(w, <span class="pk">http</span>.StatusBadRequest, <span class="st">"collection already running"</span>)
+        <span class="kw">return</span>
+    }
+
+    <span class="cm">// ② Set Running=true (write lock)</span>
+    s.collectMu.<span class="fn">Lock</span>()
+    s.collectStatus = <span class="tp">data.CollectionStatus</span>{Running: <span class="kw">true</span>, Step: <span class="st">"Starting..."</span>}
+    s.collectMu.<span class="fn">Unlock</span>()
+
+    <span class="cm">// ③ Launch goroutine — this line returns immediately</span>
+    <span class="kw">go func</span>() {
+        <span class="cm">// This closure captures s (the server pointer) from the outer scope</span>
+        callback := <span class="kw">func</span>(step <span class="tp">string</span>, current, total <span class="tp">int</span>) {
+            s.collectMu.<span class="fn">Lock</span>()
+            s.collectStatus.Step     = step
+            s.collectStatus.Progress = <span class="tp">int</span>(<span class="tp">float64</span>(current)/<span class="tp">float64</span>(total)*<span class="nu">100</span>)
+            s.collectMu.<span class="fn">Unlock</span>()
+        }
+
+        <span class="cm">// 7-step pipeline runs here in the goroutine</span>
+        _, err := s.collector.<span class="fn">CollectAllData</span>(seasons, leagues, callback)
+
+        <span class="cm">// ④ Update completion state</span>
+        s.collectMu.<span class="fn">Lock</span>()
+        s.collectStatus.Running   = <span class="kw">false</span>
+        s.collectStatus.Completed = err == <span class="kw">nil</span>
+        <span class="kw">if</span> err != <span class="kw">nil</span> { s.collectStatus.Error = err.<span class="fn">Error</span>() }
+        s.collectMu.<span class="fn">Unlock</span>()
+    }()  <span class="cm">// ← () invokes the goroutine function immediately</span>
+
+    <span class="cm">// ⑤ HTTP response returns here — before the pipeline finishes</span>
+    <span class="fn">writeJSON</span>(w, <span class="pk">http</span>.StatusOK, <span class="kw">map</span>[<span class="tp">string</span>]<span class="kw">any</span>{<span class="st">"message"</span>: <span class="st">"Data collection started"</span>})
+}</pre>
+
+<div class="callout concept">
+  <strong><code>go func() { ... }()</code></strong> — The <code>go</code> keyword launches the function in a new goroutine. A goroutine is a lightweight thread managed by the Go runtime — starts in microseconds (not milliseconds), uses 2KB initial stack (not 1MB). The <code>()</code> at the end immediately calls the anonymous function in the new goroutine.
+</div>
+
+<div class="callout concept">
+  <strong>Closure captures <code>s</code></strong> — The goroutine is a closure that captures the variable <code>s</code> (the server pointer) from the surrounding scope. Both the goroutine and the handler share the same <code>s</code>, which is why mutex protection is required for every access to <code>s.collectStatus</code>.
+</div>
+
+<hr>
+
+<!-- ══════════════════════════ PATTERNS REFERENCE ══════════════════════════ -->
+<h1>Complete Go Patterns Reference</h1>
+
+<table class="pattern-table">
+  <tr><th>Pattern</th><th>Location</th><th>What to say</th></tr>
+  <tr><td>NewXxx() constructor</td><td>algorithm.go:138</td><td>Go's factory convention — accepts deps, returns *Type</td></tr>
+  <tr><td>manual DI</td><td>main.go:59</td><td>No framework — entire dep graph readable in one function</td></tr>
+  <tr><td>pointer receiver (e *Engine)</td><td>algorithm.go:266</td><td>Reads/mutates struct state; avoids copying large structs</td></tr>
+  <tr><td>anonymous struct</td><td>server.go:289</td><td>Inline type definition — one-time use, no named type needed</td></tr>
+  <tr><td>*float64 optional</td><td>algorithm.go:83</td><td>nil = absent, non-nil = present — Go's Option&lt;T&gt; pattern</td></tr>
+  <tr><td>blank identifier _</td><td>main.go:23</td><td>Explicit discard — "I know this exists; I don't need it"</td></tr>
+  <tr><td>comma-ok type assertion</td><td>probs.go:20</td><td>Safe form — never panics; always prefer v, ok := x.(T)</td></tr>
+  <tr><td>multiple return values</td><td>factors.go:444</td><td>Idiomatic Go — no tuples or wrapper structs needed</td></tr>
+  <tr><td>closure / anonymous func</td><td>factors.go:560</td><td>Functions are first-class; closures capture outer scope</td></tr>
+  <tr><td>sync.RWMutex</td><td>calibration.go:31</td><td>Many readers OR one writer — efficient for read-heavy data</td></tr>
+  <tr><td>defer unlock</td><td>calibration.go:68</td><td>Guaranteed cleanup — runs on return AND on panic</td></tr>
+  <tr><td>goroutine go func()</td><td>server.go:440</td><td>Lightweight thread — ~2KB stack, microsecond startup</td></tr>
+  <tr><td>make() for maps</td><td>algorithm.go:141</td><td>Nil maps panic on write — always initialise with make()</td></tr>
+  <tr><td>defensive map copy</td><td>calibration.go:361</td><td>Maps are references — copy manually to avoid aliasing</td></tr>
+  <tr><td>iota enum</td><td>domain/enums.go</td><td>Auto-incrementing constants — Go's enum pattern</td></tr>
+  <tr><td>struct tags json:"..."</td><td>algorithm.go:48</td><td>Metadata for encoding — controls JSON key names</td></tr>
+  <tr><td>implicit interface</td><td>server.go:76</td><td>chi.Router satisfies http.Handler without declaration</td></tr>
+  <tr><td>sliding window slice</td><td>calibration.go:83</td><td>append() + re-slice — no manual element shifting</td></tr>
+  <tr><td>rune iteration</td><td>factors.go:191</td><td>for range string yields runes (Unicode-safe), not bytes</td></tr>
+  <tr><td>time reference date</td><td>builder.go:96</td><td>"2006-01-02" is Go's mnemonic — not strftime codes</td></tr>
+</table>
+
+<hr>
+
+<!-- ══════════════════════════ TALKING POINTS ══════════════════════════ -->
+<h1>Key Talking Points</h1>
+
+<h2>Why Go over Python for this codebase?</h2>
+<table>
+  <tr><th>Go</th><th>Python</th></tr>
+  <tr><td>Single binary — <code>go build</code>, no runtime, no pip, no venv</td><td>Runtime + dependencies required on every machine</td></tr>
+  <tr><td>Compile-time type errors</td><td>Runtime AttributeError / TypeError surprises</td></tr>
+  <tr><td>Goroutines: 2KB stack, microsecond startup, no GIL</td><td>Threads: 1MB stack, milliseconds, GIL blocks CPU work</td></tr>
+  <tr><td>10–50× faster for CPU loops (Poisson, Elo, backtest)</td><td>Slower for computation-heavy code</td></tr>
+  <tr><td><code>if err != nil</code> forces explicit error handling</td><td>Exceptions can be silently swallowed</td></tr>
+</table>
+
+<h2>Package dependency graph — how circular imports are prevented</h2>
+<div class="flow">
+<span class="label">domain/</span>      <span class="dim">← imports nothing from this project (pure types)</span>
+  <span class="arrow">↑</span>
+<span class="label">storage/</span>     <span class="dim">← imports domain</span>
+<span class="label">util/</span>        <span class="dim">← imports domain</span>
+<span class="label">context/</span>     <span class="dim">← imports domain</span>
+  <span class="arrow">↑</span>
+<span class="label">algorithm/</span>   <span class="dim">← imports domain, context</span>
+<span class="label">data/</span>        <span class="dim">← imports domain</span>
+<span class="label">backtest/</span>    <span class="dim">← imports algorithm, domain</span>
+<span class="label">jackpot/</span>     <span class="dim">← imports algorithm, domain</span>
+  <span class="arrow">↑</span>
+<span class="label">api/</span>         <span class="dim">← imports everything above</span>
+  <span class="arrow">↑</span>
+<span class="label">cmd/server/</span>  <span class="dim">← imports api only (the entry point)</span>
+</div>
+
+<p>The dependency graph is a <strong>DAG</strong> (Directed Acyclic Graph). Go's compiler enforces this — a circular import is a compile error. This forces clean architecture by design, not by convention.</p>
+
+<hr>
+<p style="text-align:center; color: var(--text-dim); font-size: 11px; margin-top: 30px; font-family: 'JetBrains Mono', monospace;">
+  bet4me · betting-algorithm-go · End-to-End Code Walkthrough
+</p>
+
+</body>
+</html>

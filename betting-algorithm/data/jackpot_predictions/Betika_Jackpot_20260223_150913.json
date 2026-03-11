@@ -1,0 +1,43 @@
+{
+  "jackpot_id": "Betika_Jackpot_20260223_150913",
+  "provider": "Betika",
+  "type": "Jackpot",
+  "prize_amount": null,
+  "total_matches": 1,
+  "analyzed_at": "2026-02-23T15:09:13.731279",
+  "predictions": [
+    {
+      "match_number": 1,
+      "home_team": "Clube Do Remo PaSc Internacional",
+      "away_team": "Clube Do Remo Pa",
+      "prediction": "Home",
+      "confidence": 0.6541,
+      "home_prob": 0.3494,
+      "draw_prob": 0.3027,
+      "away_prob": 0.3479,
+      "recommendation": "No Bet"
+    }
+  ],
+  "high_confidence_count": 0,
+  "low_confidence_count": 0,
+  "high_confidence_picks": [],
+  "low_confidence_picks": [],
+  "average_confidence": 0.6541,
+  "recommended_combinations": [
+    {
+      "strategy": "Main Prediction",
+      "description": "All matches with highest probability outcome",
+      "picks": [
+        "1: Home"
+      ],
+      "predicted_accuracy": 0.3494
+    },
+    {
+      "strategy": "Draw Value",
+      "description": "1 matches with draw probability >30%",
+      "draw_candidates": [
+        "1: Clube Do Remo PaSc Internacional vs Clube Do Remo Pa (30.3%)"
+      ]
+    }
+  ]
+}
