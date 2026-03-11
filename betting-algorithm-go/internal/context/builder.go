@@ -16,14 +16,14 @@ import (
 //
 // Handles missing data gracefully with defaults and caching for performance.
 type MatchContextBuilder struct {
-	historicalData   interface{}
+	historicalData   []HistoricalMatch
 	h2hCache         map[string]*domain.H2HRecord
 	seasonStatsCache map[string]map[string]interface{}
 	managerDB        map[string]*domain.ManagerInfo
 }
 
 // NewMatchContextBuilder creates a new context builder.
-func NewMatchContextBuilder(historicalData interface{}) *MatchContextBuilder {
+func NewMatchContextBuilder(historicalData []HistoricalMatch) *MatchContextBuilder {
 	builder := &MatchContextBuilder{
 		historicalData:   historicalData,
 		h2hCache:         make(map[string]*domain.H2HRecord),
@@ -186,30 +186,39 @@ func (b *MatchContextBuilder) getManagerInfo(team string) *domain.ManagerInfo {
 }
 
 // getH2HRecord gets H2H record from historical data.
-//
-// Note: This is a placeholder implementation. In a real scenario, you would
-// query the historical data (e.g., a slice of matches or database) to build
-// the H2H record.
 func (b *MatchContextBuilder) getH2HRecord(homeTeam, awayTeam string, homePos, awayPos int) *domain.H2HRecord {
 	cacheKey := fmt.Sprintf("%s_%s", homeTeam, awayTeam)
 	if cached, ok := b.h2hCache[cacheKey]; ok {
 		return cached
 	}
 
-	// TODO: Query historical data for H2H matches
-	// For now, return nil if no historical data available
-	if b.historicalData == nil {
+	if len(b.historicalData) == 0 {
 		return nil
 	}
 
-	// Placeholder: In a real implementation, you would:
-	// 1. Query historical data for matches between these teams
-	// 2. Build H2HResult list
-	// 3. Calculate weaker team streak
-	// 4. Determine if anomaly is triggered
+	// Filter matches involving both teams (either venue)
+	var h2hMatches []HistoricalMatch
+	for _, m := range b.historicalData {
+		if (m.HomeTeam == homeTeam && m.AwayTeam == awayTeam) ||
+			(m.HomeTeam == awayTeam && m.AwayTeam == homeTeam) {
+			h2hMatches = append(h2hMatches, m)
+		}
+	}
 
-	// For now, return nil to indicate no H2H data
-	return nil
+	record := BuildH2HRecordFromMatches(h2hMatches, homeTeam, awayTeam, homePos, awayPos)
+	if record != nil {
+		b.h2hCache[cacheKey] = record
+	}
+	return record
+}
+
+// SetHistoricalData updates the historical dataset used for context building.
+// Call this after data collection completes to refresh H2H and season stats.
+func (b *MatchContextBuilder) SetHistoricalData(matches []HistoricalMatch) {
+	b.historicalData = matches
+	// Invalidate caches so next BuildContext calls use new data
+	b.h2hCache = make(map[string]*domain.H2HRecord)
+	b.seasonStatsCache = make(map[string]map[string]interface{})
 }
 
 // calculateWeakerTeamStreak calculates consecutive unbeaten streak for weaker team in H2H.
@@ -252,30 +261,29 @@ func calculateWeakerTeamStreak(
 }
 
 // calculateSeasonStats calculates season-level statistics for team.
-//
-// Note: This is a placeholder implementation. In a real scenario, you would
-// query the historical data to calculate actual season statistics.
 func (b *MatchContextBuilder) calculateSeasonStats(team string, perspective string) map[string]interface{} {
 	cacheKey := fmt.Sprintf("%s_%s", team, perspective)
 	if cached, ok := b.seasonStatsCache[cacheKey]; ok {
 		return cached
 	}
 
-	// TODO: Query historical data for season stats
-	// For now, return nil if no historical data available
-	if b.historicalData == nil {
+	if len(b.historicalData) == 0 {
 		return nil
 	}
 
-	// Placeholder: In a real implementation, you would:
-	// 1. Query all matches for this team this season
-	// 2. Calculate avg possession
-	// 3. Calculate away draw rate
-	// 4. Calculate goals per game
-	// 5. Cache the results
+	// Filter matches involving this team
+	var teamMatches []HistoricalMatch
+	for _, m := range b.historicalData {
+		if m.HomeTeam == team || m.AwayTeam == team {
+			teamMatches = append(teamMatches, m)
+		}
+	}
 
-	// For now, return nil to indicate no season data
-	return nil
+	stats := CalculateSeasonStatsFromMatches(teamMatches, team, perspective)
+	if stats != nil {
+		b.seasonStatsCache[cacheKey] = stats
+	}
+	return stats
 }
 
 // ClearCaches clears all caches (useful for testing or when data updated).

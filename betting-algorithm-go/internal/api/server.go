@@ -19,6 +19,7 @@ import (
 
 	"bet4me/betting-algorithm-go/internal/algorithm"
 	"bet4me/betting-algorithm-go/internal/backtest"
+	appctx "bet4me/betting-algorithm-go/internal/context"
 	"bet4me/betting-algorithm-go/internal/data"
 	"bet4me/betting-algorithm-go/internal/jackpot"
 	"bet4me/betting-algorithm-go/internal/storage"
@@ -26,14 +27,15 @@ import (
 
 // Server holds all dependencies and exposes Handler().
 type Server struct {
-	engine    *algorithm.PredictionEngine
-	collector *data.HistoricalDataCollector
-	fetcher   *data.LiveFixturesFetcher
-	sources   *data.DataSourcesManager
-	backtester *backtest.BacktestEngine
-	jFetcher  *jackpot.JackpotFetcher
-	jAnalyzer *jackpot.JackpotAnalyzer
-	csvStore  *storage.CSVStore
+	engine         *algorithm.PredictionEngine
+	collector      *data.HistoricalDataCollector
+	fetcher        *data.LiveFixturesFetcher
+	sources        *data.DataSourcesManager
+	backtester     *backtest.BacktestEngine
+	jFetcher       *jackpot.JackpotFetcher
+	jAnalyzer      *jackpot.JackpotAnalyzer
+	csvStore       *storage.CSVStore
+	contextBuilder *appctx.MatchContextBuilder
 
 	// Background collection state.
 	collectMu     sync.RWMutex
@@ -58,18 +60,58 @@ func NewServer(
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &Server{
-		engine:     engine,
-		collector:  collector,
-		fetcher:    fetcher,
-		sources:    sources,
-		backtester: backtester,
-		jFetcher:   jFetcher,
-		jAnalyzer:  jAnalyzer,
-		csvStore:   storage.NewCSVStore(dataDir),
-		dataDir:    dataDir,
-		logger:     logger,
+	csvStore := storage.NewCSVStore(dataDir)
+	contextBuilder := appctx.NewMatchContextBuilder(nil)
+
+	s := &Server{
+		engine:         engine,
+		collector:      collector,
+		fetcher:        fetcher,
+		sources:        sources,
+		backtester:     backtester,
+		jFetcher:       jFetcher,
+		jAnalyzer:      jAnalyzer,
+		csvStore:       csvStore,
+		contextBuilder: contextBuilder,
+		dataDir:        dataDir,
+		logger:         logger,
 	}
+
+	// Eagerly load any existing historical data so context factors work immediately.
+	s.refreshContextData()
+	return s
+}
+
+// refreshContextData loads historical CSV and feeds it to the context builder and engine.
+// Safe to call at startup (file may not exist yet) and after data collection.
+func (s *Server) refreshContextData() {
+	dataPath := filepath.Join(s.dataDir, "final", "historical_dataset.csv")
+	records, err := s.csvStore.ReadHistoricalData(dataPath)
+	if err != nil {
+		return // file doesn't exist yet; context builder stays with empty slice
+	}
+	matches := matchRecordsToHistoricalMatches(records)
+	s.contextBuilder.SetHistoricalData(matches)
+	s.engine.SetHistoricalData(matches)
+}
+
+// matchRecordsToHistoricalMatches converts storage records to context HistoricalMatch values.
+func matchRecordsToHistoricalMatches(records []storage.MatchRecord) []appctx.HistoricalMatch {
+	out := make([]appctx.HistoricalMatch, 0, len(records))
+	for _, r := range records {
+		out = append(out, appctx.HistoricalMatch{
+			Date:           r.Date,
+			HomeTeam:       r.HomeTeam,
+			AwayTeam:       r.AwayTeam,
+			HomeGoals:      r.HomeGoals,
+			AwayGoals:      r.AwayGoals,
+			HomePossession: r.HomePossession,
+			AwayPossession: r.AwayPossession,
+			Competition:    "Premier League",
+			Season:         r.Season,
+		})
+	}
+	return out
 }
 
 // Handler builds and returns the chi router.
@@ -126,6 +168,21 @@ func (s *Server) Handler() http.Handler {
 	r.Post("/api/jackpots/results", s.recordJackpotResults)
 	r.Get("/api/jackpots/history", s.getJackpotHistory)
 	r.Get("/api/jackpots/performance", s.getJackpotPerformance)
+
+	// Static frontend — serve Angular dist build when SERVE_STATIC=true.
+	// In development, Angular's ng serve handles the frontend on its own port.
+	if os.Getenv("SERVE_STATIC") == "true" {
+		distPath := filepath.Join("..", "betting-frontend", "dist", "betting-frontend")
+		fs := http.FileServer(http.Dir(distPath))
+		r.Get("/*", func(w http.ResponseWriter, r *http.Request) {
+			// SPA fallback: serve index.html for unknown paths so Angular routing works.
+			if _, err := os.Stat(filepath.Join(distPath, r.URL.Path)); os.IsNotExist(err) {
+				http.ServeFile(w, r, filepath.Join(distPath, "index.html"))
+				return
+			}
+			http.StripPrefix("/", fs).ServeHTTP(w, r)
+		})
+	}
 
 	return r
 }
@@ -458,6 +515,11 @@ func (s *Server) startDataCollection(w http.ResponseWriter, r *http.Request) {
 			s.collectStatus.Step = "Complete!"
 		}
 		s.collectMu.Unlock()
+
+		// Refresh context builder and engine with newly collected data.
+		if err == nil {
+			s.refreshContextData()
+		}
 	}()
 
 	s.collectMu.RLock()

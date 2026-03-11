@@ -4,6 +4,7 @@ import (
 	"math"
 	"time"
 
+	"bet4me/betting-algorithm-go/internal/context"
 	"bet4me/betting-algorithm-go/internal/domain"
 )
 
@@ -22,7 +23,7 @@ type PredictionEngine struct {
 	teamForm          map[string]string
 	calibrationParams CalibrationParams
 	calibrationEngine *CalibrationEngine
-	historicalData    interface{} // Set via SetHistoricalData for context building
+	historicalData    []context.HistoricalMatch // Set via SetHistoricalData for context building
 }
 
 // SportConfig holds sport-specific configuration parameters.
@@ -217,7 +218,7 @@ func loadSportConfig(sport string) *SportConfig {
 }
 
 // SetHistoricalData sets historical data for context building (H2H, season stats).
-func (e *PredictionEngine) SetHistoricalData(data interface{}) {
+func (e *PredictionEngine) SetHistoricalData(data []context.HistoricalMatch) {
 	e.historicalData = data
 }
 
