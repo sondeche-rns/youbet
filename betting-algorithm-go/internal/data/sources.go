@@ -59,10 +59,12 @@ type DataSourcesManager struct {
 }
 
 // NewDataSourcesManager creates a new DataSourcesManager and loads the config.
+// If the config file cannot be loaded an empty (but non-nil) manager is returned
+// so callers can safely call all methods without panicking.
 func NewDataSourcesManager(configPath string) (*DataSourcesManager, error) {
 	m := &DataSourcesManager{configPath: configPath}
 	if err := m.loadConfig(); err != nil {
-		return nil, err
+		return m, err // return the empty manager so callers don't receive nil
 	}
 	return m, nil
 }
@@ -82,6 +84,9 @@ func (m *DataSourcesManager) loadConfig() error {
 
 // GetEnabledSources returns all enabled data sources.
 func (m *DataSourcesManager) GetEnabledSources() []DataSource {
+	if m.Config == nil {
+		return nil
+	}
 	var enabled []DataSource
 	for _, s := range m.Config.Sources {
 		if s.Enabled {
@@ -93,6 +98,9 @@ func (m *DataSourcesManager) GetEnabledSources() []DataSource {
 
 // GetSourceByID returns a data source by its ID, or nil if not found.
 func (m *DataSourcesManager) GetSourceByID(sourceID string) *DataSource {
+	if m.Config == nil {
+		return nil
+	}
 	for i := range m.Config.Sources {
 		if m.Config.Sources[i].ID == sourceID {
 			return &m.Config.Sources[i]
@@ -121,6 +129,9 @@ func (m *DataSourcesManager) GetAvailableSeasons(sourceID string) []Season {
 
 // GetDefaultConfig returns the default configuration.
 func (m *DataSourcesManager) GetDefaultConfig() DefaultConfig {
+	if m.Config == nil {
+		return DefaultConfig{}
+	}
 	return m.Config.DefaultConfig
 }
 
@@ -206,6 +217,9 @@ func (m *DataSourcesManager) GetSourceMetadata(sourceID string) map[string]any {
 
 // GetAllSourcesMetadata returns metadata for all sources.
 func (m *DataSourcesManager) GetAllSourcesMetadata() []map[string]any {
+	if m.Config == nil {
+		return nil
+	}
 	var result []map[string]any
 	for _, s := range m.Config.Sources {
 		result = append(result, m.GetSourceMetadata(s.ID))
