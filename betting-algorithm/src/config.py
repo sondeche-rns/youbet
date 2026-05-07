@@ -47,31 +47,16 @@ FOOTBALL_WEIGHTS_V2 = {
     # NEW: Team Quality Gap - anchors predictions to fundamental quality differences
     'teamQualityGap': 0.10,      # Combines Elo, position, star rating
 
-    # Contextual factors
-    'h2hHistorical': 0.04,       # Base H2H weight
-    'h2hAnomaly': 0.12,          # Conditional: replaces h2hHistorical (3x weight)
-    'possessionQuality': 0.07,   # xG efficiency per possession
-    'managerMomentum': 0.04,     # New manager bounce
-    'relegationMotivation': 0.04,# Bottom-3 defensive motivation
-    'counterAttackEfficiency': 0.04,  # Low-possession counter threat
-    'awayDrawFrequency': 0.03,   # Historical away draw patterns
+    # Contextual factors (weights match actual calculator output)
+    'h2hHistorical': 0.05,       # Base H2H weight (active when no anomaly)
+    'h2hAnomaly': 0.15,          # Conditional: replaces h2hHistorical (weaker team streak ≥ 3)
+    'possessionQuality': 0.12,   # xG efficiency per possession
+    'managerMomentum': 0.08,     # New manager bounce (max; actual weight computed from bounce magnitude)
+    'relegationMotivation': 0.08, # Bottom-3 defensive motivation
+    'counterAttackEfficiency': 0.06,  # Low-possession counter threat
+    'awayDrawFrequency': 0.06,   # Historical away draw patterns
 }
-# Sum = 1.00 (all weights including conditional h2hAnomaly)
-
-# Conditional factor rules
-CONDITIONAL_FACTORS = {
-    'h2hAnomaly': {
-        'replaces': 'h2hHistorical',
-        'weight_multiplier': 3.0,
-        'trigger_condition': 'weaker_team_unbeaten_streak >= 3'
-    },
-    'managerMomentum': {
-        'decay_formula': 'baseBoost * (0.85 ^ gamesManaged)',
-        'base_boost': 0.08,
-        'interim_multiplier': 0.7,
-        'min_threshold': 0.01
-    }
-}
+# Note: weights are renormalized dynamically at runtime; only active factors contribute.
 
 # Weight normalization mode
 WEIGHT_NORMALIZATION_MODE = 'dynamic'  # 'dynamic' or 'static'

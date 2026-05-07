@@ -23,11 +23,11 @@ from .algorithm import ProfessionalBettingAlgorithm
 class JackpotAnalyzer:
     """Analyzes jackpots and generates predictions"""
 
-    def __init__(self):
+    def __init__(self, predictions_dir: Path = None, results_dir: Path = None):
         self.algorithm = ProfessionalBettingAlgorithm('football')
-        self.predictions_dir = Path('./data/jackpot_predictions')
+        self.predictions_dir = Path(predictions_dir) if predictions_dir else Path('./data/jackpot_predictions')
         self.predictions_dir.mkdir(parents=True, exist_ok=True)
-        self.results_dir = Path('./data/jackpot_results')
+        self.results_dir = Path(results_dir) if results_dir else Path('./data/jackpot_results')
         self.results_dir.mkdir(parents=True, exist_ok=True)
 
     def _enrich_match_data(self, match: Dict) -> Dict:
@@ -172,9 +172,17 @@ class JackpotAnalyzer:
 
         # Generate combinations for multi-bet strategies
         analysis['recommended_combinations'] = self._generate_combinations(predictions)
+        analysis['source_type'] = jackpot_data.get('source_type', 'live')
 
-        # Save predictions
-        self._save_predictions(analysis)
+        if analysis['source_type'] == 'sample':
+            import logging
+            logging.getLogger(__name__).warning(
+                "Skipping prediction persistence: jackpot data is sample (source_type='sample'). "
+                "No real matches are available from %s %s.",
+                jackpot_data.get('provider', 'unknown'), jackpot_data.get('type', 'unknown')
+            )
+        else:
+            self._save_predictions(analysis)
 
         # Print summary
         self._print_analysis_summary(analysis)

@@ -301,3 +301,24 @@ def create_minimal_factor_result(name: str, explanation: str = "Factor inactive"
         explanation=explanation,
         metadata={}
     )
+
+
+from abc import ABC, abstractmethod
+
+
+class FactorCalculator(ABC):
+    """
+    Interface for all prediction factor calculators.
+
+    Each calculator encapsulates one prediction signal. base_weight is injected
+    from FOOTBALL_WEIGHTS_V2 at construction; the calculator decides the effective
+    weight returned in FactorResult (base_weight when active, 0.0 when not triggered).
+    """
+
+    def __init__(self, name: str, base_weight: float):
+        self.name = name
+        self.base_weight = base_weight
+
+    @abstractmethod
+    def calculate(self, match_data: Dict, context: 'MatchContext') -> FactorResult:
+        ...

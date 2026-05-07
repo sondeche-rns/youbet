@@ -126,17 +126,25 @@ def test_quality_gap_factor():
 
     prediction = algo.predict_match(match_data)
     gap_factor = prediction['factors']['teamQualityGap']
-    print(f"  Bottom vs Top: quality score = {gap_factor['score']:.3f} (should be < 0.3)")
-    print(f"  Favorite: {gap_factor['qualityFavorite']} (should be 'away')")
-    assert gap_factor['score'] < 0.30, f"Should strongly favor away! Got {gap_factor['score']:.3f}"
-    assert gap_factor['qualityFavorite'] == 'away'
+    quality_score = gap_factor['value']
+    quality_favorite = gap_factor['metadata']['qualityFavorite']
+    print(f"  Bottom vs Top: quality score = {quality_score:.3f} (should be < 0.3)")
+    print(f"  Favorite: {quality_favorite} (should be 'away')")
+    assert quality_score < 0.30, f"Should strongly favor away! Got {quality_score:.3f}"
+    assert quality_favorite == 'away'
     print("  PASSED")
 
 
 def test_home_advantage_dampening():
     """Test home advantage is dampened when away team is much stronger."""
+    from src.factors.legacy import HomeAdvantageCalculator
+    from src.config import FOOTBALL_WEIGHTS_V2
+    from src.models import create_neutral_context
+
     print("\n=== Test: Home Advantage Dampening ===")
-    algo = ProfessionalBettingAlgorithm('football')
+
+    calc = HomeAdvantageCalculator(FOOTBALL_WEIGHTS_V2['homeAdvantage'], home_advantage=0.10)
+    context = create_neutral_context()
 
     # Sunderland (pos 11) vs Liverpool (pos 6) - gap of 5, no dampening
     match_close = {
@@ -144,7 +152,7 @@ def test_home_advantage_dampening():
         'home_position': 11, 'away_position': 6,
         'homePosition': 11, 'awayPosition': 6,
     }
-    ha_close = algo._calculate_home_advantage(match_close)
+    ha_close = calc.calculate(match_close, context)
 
     # Bottom team (pos 20) vs top (pos 1) - gap of 19, heavy dampening
     match_gap = {
@@ -152,12 +160,12 @@ def test_home_advantage_dampening():
         'home_position': 20, 'away_position': 1,
         'homePosition': 20, 'awayPosition': 1,
     }
-    ha_gap = algo._calculate_home_advantage(match_gap)
+    ha_gap = calc.calculate(match_gap, context)
 
-    print(f"  Close teams (gap=5): score={ha_close['score']:.3f}, dampen={ha_close['qualityGapDampening']:.2f}")
-    print(f"  Large gap (gap=19): score={ha_gap['score']:.3f}, dampen={ha_gap['qualityGapDampening']:.2f}")
-    assert ha_gap['score'] < ha_close['score'], "Large gap should reduce home advantage"
-    assert ha_gap['qualityGapDampening'] < 0.5, "Should be heavily dampened"
+    print(f"  Close teams (gap=5): score={ha_close.value:.3f}, dampen={ha_close.metadata['qualityGapDampening']:.2f}")
+    print(f"  Large gap (gap=19): score={ha_gap.value:.3f}, dampen={ha_gap.metadata['qualityGapDampening']:.2f}")
+    assert ha_gap.value < ha_close.value, "Large gap should reduce home advantage"
+    assert ha_gap.metadata['qualityGapDampening'] < 0.5, "Should be heavily dampened"
     print("  PASSED")
 
 

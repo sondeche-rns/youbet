@@ -1,34 +1,34 @@
 """
-Unit Tests for Contextual Factors (Algorithm V2)
+Unit Tests for Contextual Factor Calculators (Algorithm V2)
 
-Tests the 6 new contextual factors:
-1. H2H Historical & Anomaly
-2. Possession Quality Index
-3. Manager Momentum
-4. Relegation Motivation
-5. Counter-Attack Efficiency
-6. Away Draw Frequency
-
-Author: AI Betting Algorithm v2.0
-Date: 2026-02-11
+Tests each contextual calculator in isolation through its own interface.
 """
 
 import unittest
 import sys
 from pathlib import Path
 
-# Add betting-algorithm to path so 'src' is importable as a package
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.algorithm import ProfessionalBettingAlgorithm
-from src.models import FactorResult, MatchContext, H2HRecord, ManagerInfo, DefensiveStyle
+from src.models import MatchContext, H2HRecord, ManagerInfo, DefensiveStyle
+from src.factors.contextual import (
+    H2HHistoricalCalculator,
+    H2HAnomalyCalculator,
+    PossessionQualityCalculator,
+    ManagerMomentumCalculator,
+    RelegationMotivationCalculator,
+    CounterAttackCalculator,
+    AwayDrawFrequencyCalculator,
+)
+from src.config import FOOTBALL_WEIGHTS_V2
 
 
 class TestH2HFactors(unittest.TestCase):
     """Test H2H historical and anomaly detection"""
 
     def setUp(self):
-        self.algo = ProfessionalBettingAlgorithm('football', use_v2_weights=True)
+        self.hist_calc = H2HHistoricalCalculator(FOOTBALL_WEIGHTS_V2['h2hHistorical'])
+        self.anom_calc = H2HAnomalyCalculator(FOOTBALL_WEIGHTS_V2['h2hAnomaly'])
 
     def test_h2h_no_data(self):
         """Test H2H with no data available"""
@@ -39,7 +39,8 @@ class TestH2HFactors(unittest.TestCase):
         )
         match_data = {'homeTeam': 'Arsenal', 'awayTeam': 'Chelsea'}
 
-        hist, anom = self.algo._calculate_h2h_factors(match_data, context)
+        hist = self.hist_calc.calculate(match_data, context)
+        anom = self.anom_calc.calculate(match_data, context)
 
         self.assertEqual(hist.name, 'h2hHistorical')
         self.assertEqual(hist.weight, 0.0)
@@ -71,14 +72,13 @@ class TestH2HFactors(unittest.TestCase):
         )
 
         match_data = {'homeTeam': 'Arsenal', 'awayTeam': 'Chelsea'}
-        hist, anom = self.algo._calculate_h2h_factors(match_data, context)
+        hist = self.hist_calc.calculate(match_data, context)
+        anom = self.anom_calc.calculate(match_data, context)
 
-        # Historical should be active
         self.assertEqual(hist.weight, 0.05)
         self.assertTrue(hist.triggered)
         self.assertGreater(hist.confidence, 0)
 
-        # Anomaly should NOT be active
         self.assertEqual(anom.weight, 0.0)
         self.assertFalse(anom.triggered)
 
@@ -99,19 +99,18 @@ class TestH2HFactors(unittest.TestCase):
         context = MatchContext(
             homeDefensiveStyle=DefensiveStyle.LOW_BLOCK,
             awayDefensiveStyle=DefensiveStyle.HIGH_PRESS,
-            homeLeaguePosition=15,  # Weaker
-            awayLeaguePosition=6,   # Stronger
+            homeLeaguePosition=15,
+            awayLeaguePosition=6,
             h2hRecord=h2h
         )
 
         match_data = {'homeTeam': 'West Ham', 'awayTeam': 'Man United'}
-        hist, anom = self.algo._calculate_h2h_factors(match_data, context)
+        hist = self.hist_calc.calculate(match_data, context)
+        anom = self.anom_calc.calculate(match_data, context)
 
-        # Historical should be REPLACED
         self.assertEqual(hist.weight, 0.0)
         self.assertFalse(hist.triggered)
 
-        # Anomaly should be ACTIVE with high weight
         self.assertEqual(anom.weight, 0.15)
         self.assertTrue(anom.triggered)
         self.assertEqual(anom.confidence, 90)
@@ -123,7 +122,7 @@ class TestPossessionQuality(unittest.TestCase):
     """Test Possession Quality Index (PQI)"""
 
     def setUp(self):
-        self.algo = ProfessionalBettingAlgorithm('football', use_v2_weights=True)
+        self.calc = PossessionQualityCalculator(FOOTBALL_WEIGHTS_V2['possessionQuality'])
 
     def test_pqi_calculation(self):
         """Test PQI calculation with known values"""
@@ -131,7 +130,6 @@ class TestPossessionQuality(unittest.TestCase):
             homeDefensiveStyle=DefensiveStyle.LOW_BLOCK,
             awayDefensiveStyle=DefensiveStyle.HIGH_PRESS
         )
-
         match_data = {
             'home_xg': 1.05,
             'away_xg': 1.72,
@@ -139,7 +137,7 @@ class TestPossessionQuality(unittest.TestCase):
             'away_possession': 59
         }
 
-        result = self.algo._calculate_possession_quality(match_data, context)
+        result = self.calc.calculate(match_data, context)
 
         self.assertEqual(result.name, 'possessionQuality')
         self.assertEqual(result.weight, 0.12)
@@ -147,7 +145,6 @@ class TestPossessionQuality(unittest.TestCase):
         self.assertIn('home_pqi', result.metadata)
         self.assertIn('away_pqi', result.metadata)
 
-        # Home PQI should be higher (efficient with low possession)
         home_pqi = result.metadata['home_pqi']
         away_pqi = result.metadata['away_pqi']
 
@@ -161,7 +158,7 @@ class TestManagerMomentum(unittest.TestCase):
     """Test Manager Bounce Decay"""
 
     def setUp(self):
-        self.algo = ProfessionalBettingAlgorithm('football', use_v2_weights=True)
+        self.calc = ManagerMomentumCalculator(FOOTBALL_WEIGHTS_V2['managerMomentum'])
 
     def test_new_manager_bounce(self):
         """Test new manager bounce (first few games)"""
@@ -172,7 +169,6 @@ class TestManagerMomentum(unittest.TestCase):
             results=['W', 'W'],
             isInterim=False
         )
-
         away_mgr = ManagerInfo(
             name='Established Manager',
             appointmentDate='2020-01-01',
@@ -188,20 +184,17 @@ class TestManagerMomentum(unittest.TestCase):
             awayManagerInfo=away_mgr
         )
 
-        match_data = {}
-        result = self.algo._calculate_manager_momentum(match_data, context)
+        result = self.calc.calculate({}, context)
 
         self.assertTrue(result.triggered)
         self.assertGreater(result.weight, 0)
         self.assertIn('home_bounce', result.metadata)
         self.assertIn('away_bounce', result.metadata)
 
-        # Home bounce should be high (2 games)
         home_bounce = result.metadata['home_bounce']
         # base * (0.85 ^ 2) = 0.08 * 0.7225 = 0.0578
         self.assertAlmostEqual(home_bounce, 0.0578, places=3)
 
-        # Away bounce should be near zero (150 games)
         away_bounce = result.metadata['away_bounce']
         self.assertLess(away_bounce, 0.01)
 
@@ -214,7 +207,6 @@ class TestManagerMomentum(unittest.TestCase):
             results=['W'],
             isInterim=True
         )
-
         full_mgr = ManagerInfo(
             name='Full Manager',
             appointmentDate='2024-01-01',
@@ -223,14 +215,14 @@ class TestManagerMomentum(unittest.TestCase):
             isInterim=False
         )
 
-        context_interim = MatchContext(
+        context = MatchContext(
             homeDefensiveStyle=DefensiveStyle.BALANCED,
             awayDefensiveStyle=DefensiveStyle.BALANCED,
             homeManagerInfo=interim_mgr,
             awayManagerInfo=full_mgr
         )
 
-        result = self.algo._calculate_manager_momentum({}, context_interim)
+        result = self.calc.calculate({}, context)
 
         home_bounce = result.metadata['home_bounce']
         away_bounce = result.metadata['away_bounce']
@@ -246,18 +238,18 @@ class TestRelegationMotivation(unittest.TestCase):
     """Test Relegation Motivation Factor"""
 
     def setUp(self):
-        self.algo = ProfessionalBettingAlgorithm('football', use_v2_weights=True)
+        self.calc = RelegationMotivationCalculator(FOOTBALL_WEIGHTS_V2['relegationMotivation'])
 
     def test_critical_zone_with_fight(self):
         """Test bottom 3 team with recent wins"""
         context = MatchContext(
             homeDefensiveStyle=DefensiveStyle.LOW_BLOCK,
             awayDefensiveStyle=DefensiveStyle.HIGH_PRESS,
-            homeLeaguePosition=19,  # Critical zone
-            homeRecentForm=['L', 'W', 'W', 'D', 'W']  # 3 wins in last 4
+            homeLeaguePosition=19,
+            homeRecentForm=['L', 'W', 'W', 'D', 'W']
         )
 
-        result = self.algo._calculate_relegation_motivation({}, context)
+        result = self.calc.calculate({}, context)
 
         self.assertTrue(result.triggered)
         self.assertEqual(result.weight, 0.08)
@@ -276,7 +268,7 @@ class TestRelegationMotivation(unittest.TestCase):
             homeRecentForm=['L', 'D', 'L', 'D', 'D']
         )
 
-        result = self.algo._calculate_relegation_motivation({}, context)
+        result = self.calc.calculate({}, context)
 
         self.assertTrue(result.triggered)
         self.assertEqual(result.weight, 0.08)
@@ -293,7 +285,7 @@ class TestRelegationMotivation(unittest.TestCase):
             homeRecentForm=['W', 'D', 'W', 'L', 'D']
         )
 
-        result = self.algo._calculate_relegation_motivation({}, context)
+        result = self.calc.calculate({}, context)
 
         self.assertFalse(result.triggered)
         self.assertEqual(result.weight, 0.0)
@@ -303,7 +295,7 @@ class TestCounterAttackEfficiency(unittest.TestCase):
     """Test Counter-Attack Efficiency Factor"""
 
     def setUp(self):
-        self.algo = ProfessionalBettingAlgorithm('football', use_v2_weights=True)
+        self.calc = CounterAttackCalculator(FOOTBALL_WEIGHTS_V2['counterAttackEfficiency'])
 
     def test_counter_attack_scenario(self):
         """Test low-possession team vs high-possession team"""
@@ -314,7 +306,7 @@ class TestCounterAttackEfficiency(unittest.TestCase):
             awaySeasonStats={'avgPossession': 62, 'goalsPerGame': 1.8}
         )
 
-        result = self.algo._calculate_counter_attack_efficiency({}, context)
+        result = self.calc.calculate({}, context)
 
         self.assertTrue(result.triggered)
         self.assertEqual(result.weight, 0.06)
@@ -331,7 +323,7 @@ class TestCounterAttackEfficiency(unittest.TestCase):
             awaySeasonStats={'avgPossession': 50, 'goalsPerGame': 1.5}
         )
 
-        result = self.algo._calculate_counter_attack_efficiency({}, context)
+        result = self.calc.calculate({}, context)
 
         self.assertFalse(result.triggered)
         self.assertEqual(result.weight, 0.0)
@@ -341,7 +333,7 @@ class TestAwayDrawFrequency(unittest.TestCase):
     """Test Away Draw Frequency Factor"""
 
     def setUp(self):
-        self.algo = ProfessionalBettingAlgorithm('football', use_v2_weights=True)
+        self.calc = AwayDrawFrequencyCalculator(FOOTBALL_WEIGHTS_V2['awayDrawFrequency'])
 
     def test_high_away_draw_rate(self):
         """Test team with high away draw frequency"""
@@ -349,13 +341,13 @@ class TestAwayDrawFrequency(unittest.TestCase):
             homeDefensiveStyle=DefensiveStyle.BALANCED,
             awayDefensiveStyle=DefensiveStyle.LOW_BLOCK,
             awaySeasonStats={
-                'awayDrawRate': 0.45,  # 45% (very high)
+                'awayDrawRate': 0.45,
                 'totalAwayGames': 15,
                 'awayDraws': 7
             }
         )
 
-        result = self.algo._calculate_away_draw_frequency({}, context)
+        result = self.calc.calculate({}, context)
 
         self.assertTrue(result.triggered)
         self.assertEqual(result.weight, 0.06)
@@ -369,13 +361,13 @@ class TestAwayDrawFrequency(unittest.TestCase):
             homeDefensiveStyle=DefensiveStyle.BALANCED,
             awayDefensiveStyle=DefensiveStyle.BALANCED,
             awaySeasonStats={
-                'awayDrawRate': 0.25,  # 25% (league average)
+                'awayDrawRate': 0.25,
                 'totalAwayGames': 12,
                 'awayDraws': 3
             }
         )
 
-        result = self.algo._calculate_away_draw_frequency({}, context)
+        result = self.calc.calculate({}, context)
 
         self.assertFalse(result.triggered)
         self.assertEqual(result.weight, 0.0)
@@ -386,13 +378,13 @@ class TestAwayDrawFrequency(unittest.TestCase):
             homeDefensiveStyle=DefensiveStyle.BALANCED,
             awayDefensiveStyle=DefensiveStyle.BALANCED,
             awaySeasonStats={
-                'awayDrawRate': 0.50,  # High rate but...
-                'totalAwayGames': 4,   # ...too few games
+                'awayDrawRate': 0.50,
+                'totalAwayGames': 4,
                 'awayDraws': 2
             }
         )
 
-        result = self.algo._calculate_away_draw_frequency({}, context)
+        result = self.calc.calculate({}, context)
 
         self.assertFalse(result.triggered)
         self.assertEqual(result.weight, 0.0)

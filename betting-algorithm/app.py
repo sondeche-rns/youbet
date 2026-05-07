@@ -8,6 +8,7 @@ Access: http://localhost:5000
 
 from flask import Flask, render_template, jsonify, request, send_file
 from flask_cors import CORS
+import functools
 import sys
 import os
 import json
@@ -34,6 +35,21 @@ from src.live_fixtures_fetcher import LiveFixturesFetcher
 app = Flask(__name__)
 CORS(app)
 
+
+def validate_required(data, *fields):
+    """Return a 400 JSON response if any field is absent or None; else return None."""
+    missing = [f for f in fields if not data or data.get(f) is None]
+    if missing:
+        return jsonify({'error': 'Missing required fields', 'missing': missing}), 400
+    return None
+
+
+@functools.lru_cache(maxsize=1)
+def get_algorithm(sport='football'):
+    """Create and cache the algorithm instance for the process lifetime."""
+    return ProfessionalBettingAlgorithm(sport)
+
+
 # Global state
 data_collection_status = {
     'running': False,
@@ -45,7 +61,6 @@ data_collection_status = {
 }
 
 backtest_results = None
-algorithm = None
 
 
 # ============================================================================
@@ -106,9 +121,7 @@ def get_upcoming_matches():
         fixtures = fetcher.get_upcoming_matches('soccer_epl', days_ahead=3)
 
         # Get algorithm for predictions
-        global algorithm
-        if algorithm is None:
-            algorithm = ProfessionalBettingAlgorithm('football')
+        algorithm = get_algorithm('football')
 
         # Generate predictions for top 5 upcoming fixtures
         upcoming = []
@@ -221,10 +234,9 @@ def predict_match():
     """Get prediction for a specific match"""
     try:
         data = request.json
-
-        global algorithm
-        if algorithm is None:
-            algorithm = ProfessionalBettingAlgorithm('football')
+        err = validate_required(data, 'home_team', 'away_team')
+        if err:
+            return err
 
         match_data = {
             'homeTeam': data.get('home_team'),
@@ -238,7 +250,7 @@ def predict_match():
             'awayOdds': data.get('away_odds')
         }
 
-        prediction = algorithm.predict_match(match_data)
+        prediction = get_algorithm('football').predict_match(match_data)
 
         return jsonify(prediction)
 
@@ -296,6 +308,10 @@ def get_live_odds():
     """Get live odds for a specific match"""
     try:
         data = request.json
+        err = validate_required(data, 'home_team', 'away_team')
+        if err:
+            return err
+
         home_team = data.get('home_team')
         away_team = data.get('away_team')
         sport = data.get('sport', 'soccer_epl')
@@ -707,31 +723,23 @@ def fetch_jackpots():
             provider_lower = provider.lower()
 
             if provider_lower == 'sportpesa':
-                # Fetch both mega and midweek
                 mega = fetcher.fetch_sportpesa_mega_jackpot()
                 if mega:
-                    # Check if using sample data
-                    if mega.get('matches') and len(mega['matches']) > 0:
-                        if mega['matches'][0].get('home_team') in ['Arsenal', 'Man City']:
-                            mega['is_sample_data'] = True
-                            warnings.append(f"SportPesa Mega: Using sample data (website uses JavaScript rendering)")
+                    if mega.get('source_type') == 'sample':
+                        warnings.append("SportPesa Mega: Using sample data (website uses JavaScript rendering)")
                     jackpots.append(mega)
 
                 midweek = fetcher.fetch_sportpesa_midweek_jackpot()
                 if midweek:
-                    if midweek.get('matches') and len(midweek['matches']) > 0:
-                        if midweek['matches'][0].get('home_team') in ['Arsenal', 'Man City']:
-                            midweek['is_sample_data'] = True
-                            warnings.append(f"SportPesa Midweek: Using sample data (website uses JavaScript rendering)")
+                    if midweek.get('source_type') == 'sample':
+                        warnings.append("SportPesa Midweek: Using sample data (website uses JavaScript rendering)")
                     jackpots.append(midweek)
 
             elif provider_lower == 'betika':
                 betika_jp = fetcher.fetch_betika_jackpot()
                 if betika_jp:
-                    if betika_jp.get('matches') and len(betika_jp['matches']) > 0:
-                        if betika_jp['matches'][0].get('home_team') in ['Arsenal', 'Man City']:
-                            betika_jp['is_sample_data'] = True
-                            warnings.append(f"Betika: Using sample data (website uses JavaScript rendering)")
+                    if betika_jp.get('source_type') == 'sample':
+                        warnings.append("Betika: Using sample data (website uses JavaScript rendering)")
                     jackpots.append(betika_jp)
 
         response = {
@@ -784,11 +792,12 @@ def record_jackpot_results():
         from src.jackpot_analyzer import JackpotAnalyzer
 
         data = request.json
+        err = validate_required(data, 'jackpot_id', 'results')
+        if err:
+            return err
+
         jackpot_id = data.get('jackpot_id')
         results = data.get('results', [])
-
-        if not jackpot_id or not results:
-            return jsonify({'error': 'jackpot_id and results required'}), 400
 
         analyzer = JackpotAnalyzer()
         result_data = analyzer.record_jackpot_results(jackpot_id, results)

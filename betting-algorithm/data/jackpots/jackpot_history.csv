@@ -17,3 +17,6 @@ timestamp,provider,type,matches_count,prize_amount,url
 2026-02-11T20:08:15.185687,SportPesa,Mega Jackpot,17,,https://www.ke.sportpesa.com/en/mega-jackpot-pro
 2026-02-11T20:08:16.828887,SportPesa,Midweek Jackpot,13,,https://www.ke.sportpesa.com/en/jackpot
 2026-02-11T20:08:17.404519,Betika,Jackpot,15,,https://www.betika.com/en-ke/jackpot
+2026-05-07T14:31:25.935829,Betika,Jackpot,sample,15,,
+2026-05-07T14:31:33.238437,SportPesa,Mega Jackpot,sample,17,,
+2026-05-07T14:31:33.378057,SportPesa,Midweek Jackpot,sample,13,,

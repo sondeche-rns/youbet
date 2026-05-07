@@ -16,7 +16,6 @@ Date: 2026-02-11
 
 from typing import Dict, Optional, List
 from pathlib import Path
-import pandas as pd
 import json
 from datetime import datetime, timedelta
 
@@ -24,6 +23,7 @@ from .models import (
     MatchContext, DefensiveStyle, ManagerInfo, H2HRecord,
     create_neutral_context
 )
+from .historical_data_store import HistoricalDataStore
 
 
 class MatchContextBuilder:
@@ -33,18 +33,11 @@ class MatchContextBuilder:
     Handles missing data gracefully with defaults and caching for performance.
     """
 
-    def __init__(self, historical_data: Optional[pd.DataFrame] = None):
-        """
-        Initialize context builder.
-
-        Args:
-            historical_data: DataFrame with historical matches for calculating
-                           season averages, H2H records, etc. Optional.
-        """
-        self.historical_data = historical_data
-        self.h2h_cache = {}   # Cache for H2H lookups
-        self.season_stats_cache = {}  # Cache for season stats
-        self.manager_db = {}  # Manager database
+    def __init__(self, store: Optional[HistoricalDataStore] = None):
+        self._store = store
+        self.h2h_cache = {}
+        self.season_stats_cache = {}
+        self.manager_db = {}
 
         # Load manager database if available
         self._load_manager_database()
@@ -205,7 +198,7 @@ class MatchContextBuilder:
         Returns:
             H2HRecord if sufficient data, None otherwise
         """
-        if self.historical_data is None or len(self.historical_data) == 0:
+        if self._store is None:
             return None
 
         cache_key = f"{home_team}_{away_team}"
@@ -213,27 +206,21 @@ class MatchContextBuilder:
             return self.h2h_cache[cache_key]
 
         try:
-            # Query historical data for H2H matches (any venue)
-            h2h_matches = self.historical_data[
-                ((self.historical_data['home_team'] == home_team) &
-                 (self.historical_data['away_team'] == away_team)) |
-                ((self.historical_data['home_team'] == away_team) &
-                 (self.historical_data['away_team'] == home_team))
-            ].tail(10)  # Last 10 H2H matches
+            raw = self._store.get_h2h_matches(home_team, away_team)
 
-            if len(h2h_matches) < 3:
+            if len(raw) < 3:
                 return None  # Insufficient data
 
-            # Build results list
-            results = []
-            for _, match in h2h_matches.iterrows():
-                results.append({
-                    'date': str(match['Date']) if 'Date' in match else '',
-                    'homeScore': int(match['home_goals']) if 'home_goals' in match else 0,
-                    'awayScore': int(match['away_goals']) if 'away_goals' in match else 0,
-                    'homeTeam': str(match['home_team']),
-                    'awayTeam': str(match['away_team'])
-                })
+            results = [
+                {
+                    'date': str(m.get('Date', '')),
+                    'homeScore': int(m.get('home_goals', 0)),
+                    'awayScore': int(m.get('away_goals', 0)),
+                    'homeTeam': str(m.get('home_team', '')),
+                    'awayTeam': str(m.get('away_team', '')),
+                }
+                for m in raw
+            ]
 
             # Calculate anomaly (weaker team unbeaten streak)
             weaker_team_streak = self._calculate_weaker_team_streak(
@@ -306,7 +293,7 @@ class MatchContextBuilder:
         Returns:
             Dict with season stats or None if insufficient data
         """
-        if self.historical_data is None or len(self.historical_data) == 0:
+        if self._store is None:
             return None
 
         cache_key = f"{team}_{perspective}"
@@ -314,41 +301,33 @@ class MatchContextBuilder:
             return self.season_stats_cache[cache_key]
 
         try:
-            # Get all matches for team this season
-            team_matches = self.historical_data[
-                (self.historical_data['home_team'] == team) |
-                (self.historical_data['away_team'] == team)
-            ]
+            team_matches = self._store.get_team_season_matches(team)
 
             if len(team_matches) < 5:
-                return None  # Need minimum sample size
+                return None
 
-            # Separate home and away matches
-            home_matches = team_matches[team_matches['home_team'] == team]
-            away_matches = team_matches[team_matches['away_team'] == team]
+            home_matches = [m for m in team_matches if m.get('home_team') == team]
+            away_matches = [m for m in team_matches if m.get('away_team') == team]
 
-            # Calculate possession average
-            if 'home_possession' in team_matches.columns:
-                home_poss = home_matches['home_possession'].mean() if len(home_matches) > 0 else 50
-                away_poss = away_matches['away_possession'].mean() if len(away_matches) > 0 else 50
+            # Possession average (optional column)
+            if any('home_possession' in m for m in team_matches):
+                home_poss_vals = [m['home_possession'] for m in home_matches if 'home_possession' in m]
+                away_poss_vals = [m['away_possession'] for m in away_matches if 'away_possession' in m]
+                home_poss = sum(home_poss_vals) / len(home_poss_vals) if home_poss_vals else 50
+                away_poss = sum(away_poss_vals) / len(away_poss_vals) if away_poss_vals else 50
                 avg_possession = (home_poss + away_poss) / 2
             else:
                 avg_possession = 50.0
 
-            # Calculate away-specific stats
-            away_draws = 0
+            away_draws = sum(
+                1 for m in away_matches
+                if m.get('home_goals') == m.get('away_goals')
+            )
             total_away_games = len(away_matches)
-
-            if total_away_games > 0:
-                for _, match in away_matches.iterrows():
-                    if match['home_goals'] == match['away_goals']:
-                        away_draws += 1
-
             away_draw_rate = away_draws / total_away_games if total_away_games > 0 else 0.25
 
-            # Calculate goals per game
-            home_goals = home_matches['home_goals'].sum() if len(home_matches) > 0 else 0
-            away_goals = away_matches['away_goals'].sum() if len(away_matches) > 0 else 0
+            home_goals = sum(m.get('home_goals', 0) for m in home_matches)
+            away_goals = sum(m.get('away_goals', 0) for m in away_matches)
             total_games = len(team_matches)
             goals_per_game = (home_goals + away_goals) / total_games if total_games > 0 else 1.2
 
